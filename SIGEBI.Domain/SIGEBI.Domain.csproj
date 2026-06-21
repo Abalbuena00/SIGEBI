@@ -7,12 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Entities\Auditoria\" />
-    <Folder Include="Entities\Configuracion\" />
-    <Folder Include="Entities\Notificaciones\" />
-    <Folder Include="Entities\Penalizaciones\" />
     <Folder Include="Exceptions\" />
-    <Folder Include="Repository\" />
   </ItemGroup>
 
 </Project>
