@@ -7,7 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Entities\Configuracion\" />
     <Folder Include="Exceptions\" />
     <Folder Include="Repository\" />
   </ItemGroup>
