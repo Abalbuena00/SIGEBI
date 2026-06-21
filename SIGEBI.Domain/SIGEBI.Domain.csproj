@@ -7,7 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Entities\Catalogo\" />
     <Folder Include="Entities\Auditoria\" />
     <Folder Include="Entities\Configuracion\" />
     <Folder Include="Entities\Notificaciones\" />
