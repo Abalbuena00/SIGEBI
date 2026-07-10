@@ -40,5 +40,8 @@ public sealed class RolConfiguration : IEntityTypeConfiguration<Rol>
             .WithOne(usuarioRol => usuarioRol.Rol)
             .HasForeignKey(usuarioRol => usuarioRol.RolId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Navigation(rol => rol.Usuarios)
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
     }
 }

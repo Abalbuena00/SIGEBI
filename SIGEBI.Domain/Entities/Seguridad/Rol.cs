@@ -4,11 +4,13 @@ namespace SIGEBI.Domain.Entities.Seguridad;
 
 public sealed class Rol : AuditableEntity
 {
+    private readonly List<UsuarioRol> _usuarios = [];
+
     public string Nombre { get; private set; } = string.Empty;
 
     public string? Descripcion { get; private set; }
 
-    public ICollection<UsuarioRol> Usuarios { get; private set; } = new List<UsuarioRol>();
+    public IReadOnlyCollection<UsuarioRol> Usuarios => _usuarios;
 
     private Rol()
     {

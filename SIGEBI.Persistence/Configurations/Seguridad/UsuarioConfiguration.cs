@@ -59,5 +59,8 @@ public sealed class UsuarioConfiguration : IEntityTypeConfiguration<Usuario>
             .WithOne(usuarioRol => usuarioRol.Usuario)
             .HasForeignKey(usuarioRol => usuarioRol.UsuarioId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Navigation(usuario => usuario.Roles)
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
     }
 }

@@ -53,5 +53,9 @@ public sealed class EjemplarConfiguration : IEntityTypeConfiguration<Ejemplar>
             .WithOne(historial => historial.Ejemplar)
             .HasForeignKey(historial => historial.EjemplarId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Navigation(ejemplar => ejemplar.HistorialEstados)
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
+
     }
 }

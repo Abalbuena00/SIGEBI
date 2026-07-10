@@ -36,5 +36,8 @@ public sealed class AutorConfiguration : IEntityTypeConfiguration<Autor>
             .WithOne(recursoAutor => recursoAutor.Autor)
             .HasForeignKey(recursoAutor => recursoAutor.AutorId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Navigation(autor => autor.Recursos)
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
     }
 }

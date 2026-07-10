@@ -5,6 +5,8 @@ namespace SIGEBI.Domain.Entities.Seguridad;
 
 public sealed class Usuario : AuditableEntity
 {
+    private readonly List<UsuarioRol> _roles = [];
+
     public string NombreCompleto { get; private set; } = string.Empty;
 
     public string Correo { get; private set; } = string.Empty;
@@ -17,7 +19,7 @@ public sealed class Usuario : AuditableEntity
 
     public EstadoUsuario Estado { get; private set; }
 
-    public ICollection<UsuarioRol> Roles { get; private set; } = new List<UsuarioRol>();
+    public IReadOnlyCollection<UsuarioRol> Roles => _roles;
 
     private Usuario()
     {
@@ -65,5 +67,29 @@ public sealed class Usuario : AuditableEntity
         Matricula = matricula?.Trim();
         NumeroEmpleado = numeroEmpleado?.Trim();
         FechaModificacion = DateTime.UtcNow;
+    }
+
+    public void AgregarRol(UsuarioRol usuarioRol)
+    {
+        ArgumentNullException.ThrowIfNull(usuarioRol);
+
+        bool existeRol = _roles.Any(registro =>
+            registro.RolId == usuarioRol.RolId);
+
+        if (existeRol)
+            throw new InvalidOperationException("El usuario ya tiene asignado este rol.");
+
+        _roles.Add(usuarioRol);
+        FechaModificacion = DateTime.UtcNow;
+    }
+
+    public void QuitarRol(UsuarioRol usuarioRol)
+    {
+        ArgumentNullException.ThrowIfNull(usuarioRol);
+
+        bool removido = _roles.Remove(usuarioRol);
+
+        if (removido)
+            FechaModificacion = DateTime.UtcNow;
     }
 }

@@ -5,6 +5,8 @@ namespace SIGEBI.Domain.Entities.Catalogo;
 
 public sealed class Ejemplar : AuditableEntity
 {
+    private readonly List<HistorialEstadoEjemplar> _historialEstados = [];
+
     public int RecursoBibliograficoId { get; private set; }
 
     public string CodigoInterno { get; private set; } = string.Empty;
@@ -15,7 +17,7 @@ public sealed class Ejemplar : AuditableEntity
 
     public RecursoBibliografico? RecursoBibliografico { get; private set; }
 
-    public ICollection<HistorialEstadoEjemplar> HistorialEstados { get; private set; } = new List<HistorialEstadoEjemplar>();
+    public IReadOnlyCollection<HistorialEstadoEjemplar> HistorialEstados => _historialEstados;
 
     private Ejemplar()
     {
@@ -89,6 +91,14 @@ public sealed class Ejemplar : AuditableEntity
 
         Estado = EstadoEjemplar.FueraDeServicio;
         EstadoFisico = motivo.Trim();
+        FechaModificacion = DateTime.UtcNow;
+    }
+
+    public void RegistrarHistorialEstado(HistorialEstadoEjemplar historialEstado)
+    {
+        ArgumentNullException.ThrowIfNull(historialEstado);
+
+        _historialEstados.Add(historialEstado);
         FechaModificacion = DateTime.UtcNow;
     }
 }
