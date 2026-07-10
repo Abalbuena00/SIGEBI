@@ -4,11 +4,13 @@ namespace SIGEBI.Domain.Entities.Catalogo;
 
 public sealed class Categoria : AuditableEntity
 {
+    private readonly List<RecursoCategoria> _recursos = [];
+
     public string Nombre { get; private set; } = string.Empty;
 
     public string? Descripcion { get; private set; }
 
-    public ICollection<RecursoCategoria> Recursos { get; private set; } = new List<RecursoCategoria>();
+    public IReadOnlyCollection<RecursoCategoria> Recursos => _recursos;
 
     private Categoria()
     {

@@ -4,9 +4,11 @@ namespace SIGEBI.Domain.Entities.Catalogo;
 
 public sealed class Autor : AuditableEntity
 {
+    private readonly List<RecursoAutor> _recursos = [];
+
     public string Nombre { get; private set; } = string.Empty;
 
-    public ICollection<RecursoAutor> Recursos { get; private set; } = new List<RecursoAutor>();
+    public IReadOnlyCollection<RecursoAutor> Recursos => _recursos;
 
     private Autor()
     {

@@ -5,6 +5,8 @@ namespace SIGEBI.Domain.Entities.Prestamos;
 
 public sealed class Prestamo : AuditableEntity
 {
+    private readonly List<Devolucion> _devoluciones = [];
+
     public int UsuarioId { get; private set; }
 
     public int EjemplarId { get; private set; }
@@ -21,7 +23,7 @@ public sealed class Prestamo : AuditableEntity
 
     public EstadoPrestamo Estado { get; private set; }
 
-    public ICollection<Devolucion> Devoluciones { get; private set; } = new List<Devolucion>();
+    public IReadOnlyCollection<Devolucion> Devoluciones => _devoluciones;
 
     private Prestamo()
     {
@@ -86,6 +88,17 @@ public sealed class Prestamo : AuditableEntity
         FechaModificacion = DateTime.UtcNow;
 
         return OperationResult.Success();
+    }
+
+    public void AgregarDevolucion(Devolucion devolucion)
+    {
+        ArgumentNullException.ThrowIfNull(devolucion);
+
+        if (_devoluciones.Contains(devolucion))
+            throw new InvalidOperationException("La devolución ya está registrada en este préstamo.");
+
+        _devoluciones.Add(devolucion);
+        FechaModificacion = DateTime.UtcNow;
     }
 
     public OperationResult CerrarConIncidencia(DateTime fechaCierre)

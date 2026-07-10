@@ -68,5 +68,14 @@ public sealed class RecursoBibliograficoConfiguration : IEntityTypeConfiguration
             .WithOne(recursoCategoria => recursoCategoria.RecursoBibliografico)
             .HasForeignKey(recursoCategoria => recursoCategoria.RecursoBibliograficoId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Navigation(recurso => recurso.Ejemplares)
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
+
+        builder.Navigation(recurso => recurso.Autores)
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
+
+        builder.Navigation(recurso => recurso.Categorias)
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
     }
 }

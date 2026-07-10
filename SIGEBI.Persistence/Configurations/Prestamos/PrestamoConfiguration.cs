@@ -85,5 +85,8 @@ public sealed class PrestamoConfiguration : IEntityTypeConfiguration<Prestamo>
             .WithOne(devolucion => devolucion.Prestamo)
             .HasForeignKey(devolucion => devolucion.PrestamoId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Navigation(prestamo => prestamo.Devoluciones)
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
     }
 }

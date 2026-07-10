@@ -39,5 +39,8 @@ public sealed class CategoriaConfiguration : IEntityTypeConfiguration<Categoria>
             .WithOne(recursoCategoria => recursoCategoria.Categoria)
             .HasForeignKey(recursoCategoria => recursoCategoria.CategoriaId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Navigation(categoria => categoria.Recursos)
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
     }
 }
