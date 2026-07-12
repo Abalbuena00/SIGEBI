@@ -35,6 +35,24 @@ public sealed class RecursoBibliograficoConfiguration : IEntityTypeConfiguration
         builder.Property(recurso => recurso.Edicion)
             .HasMaxLength(80);
 
+        builder.Property(recurso => recurso.ImagenPortadaUrl)
+            .HasMaxLength(500);
+
+        builder.Property(recurso => recurso.ImagenPortadaNombreArchivo)
+            .HasMaxLength(255);
+
+        builder.Property(recurso => recurso.ImagenPortadaContentType)
+            .HasMaxLength(100);
+
+        builder.Property(recurso => recurso.ImagenContraportadaUrl)
+            .HasMaxLength(500);
+
+        builder.Property(recurso => recurso.ImagenContraportadaNombreArchivo)
+            .HasMaxLength(255);
+
+        builder.Property(recurso => recurso.ImagenContraportadaContentType)
+            .HasMaxLength(100);
+
         builder.Property(recurso => recurso.FechaCreacion)
             .IsRequired();
 
