@@ -20,6 +20,18 @@ public sealed class RecursoBibliografico : AuditableEntity
 
     public string? Edicion { get; private set; }
 
+    public string? ImagenPortadaUrl { get; private set; }
+
+    public string? ImagenPortadaNombreArchivo { get; private set; }
+
+    public string? ImagenPortadaContentType { get; private set; }
+
+    public string? ImagenContraportadaUrl { get; private set; }
+
+    public string? ImagenContraportadaNombreArchivo { get; private set; }
+
+    public string? ImagenContraportadaContentType { get; private set; }
+
     public IReadOnlyCollection<Ejemplar> Ejemplares => _ejemplares;
 
     public IReadOnlyCollection<RecursoAutor> Autores => _autores;
@@ -71,6 +83,62 @@ public sealed class RecursoBibliografico : AuditableEntity
         Editorial = editorial?.Trim();
         AnioPublicacion = anioPublicacion;
         Edicion = edicion?.Trim();
+        FechaModificacion = DateTime.UtcNow;
+    }
+
+    public void ActualizarImagenPortada(
+    string imagenPortadaUrl,
+    string nombreArchivo,
+    string contentType)
+    {
+        if (string.IsNullOrWhiteSpace(imagenPortadaUrl))
+            throw new ArgumentException("La URL de la imagen de portada es obligatoria.");
+
+        if (string.IsNullOrWhiteSpace(nombreArchivo))
+            throw new ArgumentException("El nombre del archivo de portada es obligatorio.");
+
+        if (string.IsNullOrWhiteSpace(contentType))
+            throw new ArgumentException("El tipo de contenido de la portada es obligatorio.");
+
+        ImagenPortadaUrl = imagenPortadaUrl.Trim();
+        ImagenPortadaNombreArchivo = nombreArchivo.Trim();
+        ImagenPortadaContentType = contentType.Trim();
+        FechaModificacion = DateTime.UtcNow;
+    }
+
+    public void ActualizarImagenContraportada(
+        string imagenContraportadaUrl,
+        string nombreArchivo,
+        string contentType)
+    {
+        if (string.IsNullOrWhiteSpace(imagenContraportadaUrl))
+            throw new ArgumentException("La URL de la imagen de contraportada es obligatoria.");
+
+        if (string.IsNullOrWhiteSpace(nombreArchivo))
+            throw new ArgumentException("El nombre del archivo de contraportada es obligatorio.");
+
+        if (string.IsNullOrWhiteSpace(contentType))
+            throw new ArgumentException("El tipo de contenido de la contraportada es obligatorio.");
+
+        ImagenContraportadaUrl = imagenContraportadaUrl.Trim();
+        ImagenContraportadaNombreArchivo = nombreArchivo.Trim();
+        ImagenContraportadaContentType = contentType.Trim();
+        FechaModificacion = DateTime.UtcNow;
+    }
+
+    public void RemoverImagenPortada()
+    {
+        ImagenPortadaUrl = null;
+        ImagenPortadaNombreArchivo = null;
+        ImagenPortadaContentType = null;
+        FechaModificacion = DateTime.UtcNow;
+    }
+
+    public void RemoverImagenContraportada()
+    {
+        ImagenContraportadaUrl = null;
+        ImagenContraportadaNombreArchivo = null;
+        ImagenContraportadaContentType = null;
         FechaModificacion = DateTime.UtcNow;
     }
 
