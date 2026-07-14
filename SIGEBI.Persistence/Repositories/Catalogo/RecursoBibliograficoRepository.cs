@@ -42,6 +42,23 @@ public sealed class RecursoBibliograficoRepository
                 cancellationToken);
     }
 
+    // Busca un recurso por ID y devuelve el detalle completo incluyendo autores, categorías y ejemplares.
+    public async Task<RecursoBibliografico?> ObtenerDetallePorIdAsync(
+        int id,
+        CancellationToken cancellationToken = default)
+        {
+            return await Context.RecursosBibliograficos
+                .AsNoTracking()
+                .Include(recurso => recurso.Ejemplares)
+                .Include(recurso => recurso.Autores)
+                    .ThenInclude(recursoAutor => recursoAutor.Autor)
+                .Include(recurso => recurso.Categorias)
+                    .ThenInclude(recursoCategoria => recursoCategoria.Categoria)
+                .FirstOrDefaultAsync(
+                    recurso => recurso.Id == id && recurso.Activo,
+                    cancellationToken);
+        }
+
     // Permite consultar el catálogo por título, autor o categoría.
     public async Task<IReadOnlyList<RecursoBibliografico>> BuscarAsync(
         string? titulo,
