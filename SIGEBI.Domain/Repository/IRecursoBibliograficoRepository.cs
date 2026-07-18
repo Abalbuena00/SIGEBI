@@ -20,6 +20,10 @@ public interface IRecursoBibliograficoRepository : IBaseRepository<RecursoBiblio
     int id,
     CancellationToken cancellationToken = default);
 
+    void RemoverAutor(RecursoAutor recursoAutor);
+
+    void RemoverCategoria(RecursoCategoria recursoCategoria);
+
     Task<IReadOnlyList<RecursoBibliografico>> BuscarAsync(
         string? titulo,
         string? autor,

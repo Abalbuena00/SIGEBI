@@ -73,6 +73,18 @@ public sealed class RecursoBibliograficoRepository
                 cancellationToken);
     }
 
+    // Remueve un autor de un recurso bibliográfico.
+    public void RemoverAutor(RecursoAutor recursoAutor)
+    {
+        Context.RecursosAutores.Remove(recursoAutor);
+    }
+
+    // Remueve una categoría de un recurso bibliográfico.
+    public void RemoverCategoria(RecursoCategoria recursoCategoria)
+    {
+        Context.RecursosCategorias.Remove(recursoCategoria);
+    }
+
     // Permite consultar el catálogo por título, autor o categoría.
     public async Task<IReadOnlyList<RecursoBibliografico>> BuscarAsync(
         string? titulo,
