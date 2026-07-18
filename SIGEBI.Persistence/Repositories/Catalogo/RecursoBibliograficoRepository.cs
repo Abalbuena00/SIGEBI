@@ -59,6 +59,20 @@ public sealed class RecursoBibliograficoRepository
                     cancellationToken);
         }
 
+    // ObtenerParaActualizarRelacionesAsync busca un recurso por ID y devuelve el detalle completo incluyendo autores y categorías, pero no incluye los ejemplares.
+    // Esto es útil cuando se desea actualizar las relaciones del recurso sin necesidad de cargar los ejemplares.
+    public async Task<RecursoBibliografico?> ObtenerParaActualizarRelacionesAsync(
+    int id,
+    CancellationToken cancellationToken = default)
+    {
+        return await Context.RecursosBibliograficos
+            .Include(recurso => recurso.Autores)
+            .Include(recurso => recurso.Categorias)
+            .FirstOrDefaultAsync(
+                recurso => recurso.Id == id && recurso.Activo,
+                cancellationToken);
+    }
+
     // Permite consultar el catálogo por título, autor o categoría.
     public async Task<IReadOnlyList<RecursoBibliografico>> BuscarAsync(
         string? titulo,

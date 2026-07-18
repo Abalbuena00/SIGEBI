@@ -16,6 +16,10 @@ public interface IRecursoBibliograficoRepository : IBaseRepository<RecursoBiblio
         int id,
         CancellationToken cancellationToken = default);
 
+    Task<RecursoBibliografico?> ObtenerParaActualizarRelacionesAsync(
+    int id,
+    CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<RecursoBibliografico>> BuscarAsync(
         string? titulo,
         string? autor,
