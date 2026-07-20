@@ -18,6 +18,7 @@ public sealed class UsuarioRol : BaseEntity
     {
     }
 
+
     public UsuarioRol(int usuarioId, int rolId)
     {
         if (usuarioId <= 0)
@@ -27,6 +28,15 @@ public sealed class UsuarioRol : BaseEntity
             throw new ArgumentException("El rol es obligatorio.");
 
         UsuarioId = usuarioId;
+        RolId = rolId;
+        FechaAsignacion = DateTime.UtcNow;
+    }
+
+    public UsuarioRol(int rolId)
+    {
+        if (rolId <= 0)
+            throw new ArgumentException("El rol es obligatorio.");
+
         RolId = rolId;
         FechaAsignacion = DateTime.UtcNow;
     }
