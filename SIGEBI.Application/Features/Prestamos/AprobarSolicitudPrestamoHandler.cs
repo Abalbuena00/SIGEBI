@@ -49,18 +49,6 @@ public sealed class AprobarSolicitudPrestamoHandler
         if (solicitud is null)
             return ApplicationResult.Failure("La solicitud de préstamo no fue encontrada.");
 
-        if (solicitud.FechaExpiracionSolicitud < DateTime.UtcNow)
-        {
-            var resultadoVencimiento = solicitud.Vencer();
-
-            if (!resultadoVencimiento.IsSuccess)
-                return ApplicationResult.Failure(resultadoVencimiento.Error!);
-
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-            return ApplicationResult.Failure("La solicitud de préstamo ya se encuentra vencida.");
-        }
-
         var ejemplar = await _ejemplarRepository.ObtenerPorIdAsync(
             solicitud.EjemplarId,
             cancellationToken);
@@ -68,10 +56,28 @@ public sealed class AprobarSolicitudPrestamoHandler
         if (ejemplar is null)
             return ApplicationResult.Failure("El ejemplar asociado a la solicitud no fue encontrado.");
 
-        var resultadoReservaEjemplar = ejemplar.Reservar();
+        if (solicitud.FechaExpiracionSolicitud < DateTime.UtcNow)
+        {
+            var resultadoVencimiento = solicitud.Vencer();
 
-        if (!resultadoReservaEjemplar.IsSuccess)
-            return ApplicationResult.Failure(resultadoReservaEjemplar.Error!);
+            if (!resultadoVencimiento.IsSuccess)
+                return ApplicationResult.Failure(resultadoVencimiento.Error!);
+
+            if (ejemplar.Estado == EstadoEjemplar.Reservado)
+            {
+                var resultadoLiberarEjemplar = ejemplar.LiberarReserva();
+
+                if (!resultadoLiberarEjemplar.IsSuccess)
+                    return ApplicationResult.Failure(resultadoLiberarEjemplar.Error!);
+            }
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            return ApplicationResult.Failure("La solicitud de préstamo ya se encuentra vencida.");
+        }
+
+        if (ejemplar.Estado != EstadoEjemplar.Reservado)
+            return ApplicationResult.Failure("El ejemplar asociado a la solicitud no se encuentra reservado.");
 
         var usuarioAprobador = await _usuarioRepository.ObtenerPorIdAsync(
             command.UsuarioAprobadorId,

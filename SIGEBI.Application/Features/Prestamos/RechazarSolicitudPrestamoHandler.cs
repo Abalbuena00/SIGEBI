@@ -7,15 +7,18 @@ namespace SIGEBI.Application.Features.Prestamos;
 public sealed class RechazarSolicitudPrestamoHandler
 {
     private readonly ISolicitudPrestamoRepository _solicitudPrestamoRepository;
+    private readonly IEjemplarRepository _ejemplarRepository;
     private readonly IUsuarioRepository _usuarioRepository;
     private readonly IUnitOfWork _unitOfWork;
 
     public RechazarSolicitudPrestamoHandler(
         ISolicitudPrestamoRepository solicitudPrestamoRepository,
+        IEjemplarRepository ejemplarRepository,
         IUsuarioRepository usuarioRepository,
         IUnitOfWork unitOfWork)
     {
         _solicitudPrestamoRepository = solicitudPrestamoRepository;
+        _ejemplarRepository = ejemplarRepository;
         _usuarioRepository = usuarioRepository;
         _unitOfWork = unitOfWork;
     }
@@ -52,12 +55,27 @@ public sealed class RechazarSolicitudPrestamoHandler
         if (usuarioRechaza.Estado != EstadoUsuario.Activo)
             return ApplicationResult.Failure("El usuario que rechaza la solicitud no se encuentra activo.");
 
-        var resultado = solicitud.Rechazar(
+        var ejemplar = await _ejemplarRepository.ObtenerPorIdAsync(
+            solicitud.EjemplarId,
+            cancellationToken);
+
+        if (ejemplar is null)
+            return ApplicationResult.Failure("El ejemplar asociado a la solicitud no fue encontrado.");
+
+        if (ejemplar.Estado != EstadoEjemplar.Reservado)
+            return ApplicationResult.Failure("El ejemplar asociado a la solicitud no se encuentra reservado.");
+
+        var resultadoRechazo = solicitud.Rechazar(
             command.UsuarioRechazaId,
             command.Motivo);
 
-        if (!resultado.IsSuccess)
-            return ApplicationResult.Failure(resultado.Error!);
+        if (!resultadoRechazo.IsSuccess)
+            return ApplicationResult.Failure(resultadoRechazo.Error!);
+
+        var resultadoLiberarEjemplar = ejemplar.LiberarReserva();
+
+        if (!resultadoLiberarEjemplar.IsSuccess)
+            return ApplicationResult.Failure(resultadoLiberarEjemplar.Error!);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 

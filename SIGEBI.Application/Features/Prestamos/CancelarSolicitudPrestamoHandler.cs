@@ -64,35 +64,35 @@ public sealed class CancelarSolicitudPrestamoHandler
             return ApplicationResult.Failure("La solicitud no se encuentra en un estado cancelable.");
         }
 
+        var ejemplar = await _ejemplarRepository.ObtenerPorIdAsync(
+            solicitud.EjemplarId,
+            cancellationToken);
+
+        if (ejemplar is null)
+            return ApplicationResult.Failure("El ejemplar asociado a la solicitud no fue encontrado.");
+
+        if (ejemplar.Estado != EstadoEjemplar.Reservado)
+            return ApplicationResult.Failure("El ejemplar asociado a la solicitud no se encuentra reservado.");
+
         if (solicitud.Estado == EstadoSolicitudPrestamo.AprobadaPendienteRetiro)
         {
             var reservaTemporal = await _reservaTemporalRepository.ObtenerActivaPorEjemplarAsync(
                 solicitud.EjemplarId,
                 cancellationToken);
 
-            if (reservaTemporal is null ||
-                reservaTemporal.SolicitudPrestamoId != solicitud.Id)
-            {
+            if (reservaTemporal is null || reservaTemporal.SolicitudPrestamoId != solicitud.Id)
                 return ApplicationResult.Failure("No existe una reserva temporal activa para esta solicitud.");
-            }
 
             var resultadoCancelarReserva = reservaTemporal.Cancelar();
 
             if (!resultadoCancelarReserva.IsSuccess)
                 return ApplicationResult.Failure(resultadoCancelarReserva.Error!);
-
-            var ejemplar = await _ejemplarRepository.ObtenerPorIdAsync(
-                solicitud.EjemplarId,
-                cancellationToken);
-
-            if (ejemplar is null)
-                return ApplicationResult.Failure("El ejemplar asociado a la solicitud no fue encontrado.");
-
-            var resultadoLiberarEjemplar = ejemplar.LiberarReserva();
-
-            if (!resultadoLiberarEjemplar.IsSuccess)
-                return ApplicationResult.Failure(resultadoLiberarEjemplar.Error!);
         }
+
+        var resultadoLiberarEjemplar = ejemplar.LiberarReserva();
+
+        if (!resultadoLiberarEjemplar.IsSuccess)
+            return ApplicationResult.Failure(resultadoLiberarEjemplar.Error!);
 
         var resultadoCancelarSolicitud = solicitud.Cancelar();
 

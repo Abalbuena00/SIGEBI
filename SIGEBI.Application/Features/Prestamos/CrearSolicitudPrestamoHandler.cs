@@ -100,6 +100,11 @@ public sealed class CrearSolicitudPrestamoHandler
         if (tieneSolicitudActivaParaEjemplar)
             return ApplicationResult<int>.Failure("El usuario ya tiene una solicitud activa para este ejemplar.");
 
+        var resultadoReservaEjemplar = ejemplar.Reservar();
+
+        if (!resultadoReservaEjemplar.IsSuccess)
+            return ApplicationResult<int>.Failure(resultadoReservaEjemplar.Error!);
+
         var solicitudPrestamo = new SolicitudPrestamo(
             command.UsuarioId,
             command.EjemplarId,
