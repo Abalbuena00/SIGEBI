@@ -52,4 +52,46 @@ public sealed class UsuarioRepository : BaseRepository<Usuario>, IUsuarioReposit
                 usuario.Estado == EstadoUsuario.Activo)
             .ToListAsync(cancellationToken);
     }
+
+    // Busca usuarios según criterios de búsqueda, estado y rol.
+    public async Task<IReadOnlyList<Usuario>> BuscarAsync(
+    string? textoBusqueda,
+    EstadoUsuario? estado,
+    int? rolId,
+    CancellationToken cancellationToken = default)
+    {
+        var query = Context.Usuarios
+            .AsNoTracking()
+            .Include(usuario => usuario.Roles)
+                .ThenInclude(usuarioRol => usuarioRol.Rol)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(textoBusqueda))
+        {
+            string filtro = $"%{textoBusqueda.Trim()}%";
+
+            query = query.Where(usuario =>
+                EF.Functions.Like(usuario.NombreCompleto, filtro) ||
+                EF.Functions.Like(usuario.Correo, filtro) ||
+                usuario.Matricula != null && EF.Functions.Like(usuario.Matricula, filtro) ||
+                usuario.NumeroEmpleado != null && EF.Functions.Like(usuario.NumeroEmpleado, filtro));
+        }
+
+        if (estado.HasValue)
+        {
+            query = query.Where(usuario =>
+                usuario.Estado == estado.Value);
+        }
+
+        if (rolId.HasValue)
+        {
+            query = query.Where(usuario =>
+                usuario.Roles.Any(usuarioRol =>
+                    usuarioRol.RolId == rolId.Value));
+        }
+
+        return await query
+            .OrderBy(usuario => usuario.NombreCompleto)
+            .ToListAsync(cancellationToken);
+    }
 }
