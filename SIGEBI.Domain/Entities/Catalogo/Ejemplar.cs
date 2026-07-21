@@ -15,6 +15,8 @@ public sealed class Ejemplar : AuditableEntity
 
     public EstadoEjemplar Estado { get; private set; }
 
+    public byte[] RowVersion { get; private set; } = [];
+
     public RecursoBibliografico? RecursoBibliografico { get; private set; }
 
     public IReadOnlyCollection<HistorialEstadoEjemplar> HistorialEstados => _historialEstados;

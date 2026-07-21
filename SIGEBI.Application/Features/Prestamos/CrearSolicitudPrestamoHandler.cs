@@ -2,6 +2,7 @@
 using SIGEBI.Domain.Entities.Prestamos;
 using SIGEBI.Domain.Enums;
 using SIGEBI.Domain.Repository;
+using SIGEBI.Domain.Exceptions;
 
 namespace SIGEBI.Application.Features.Prestamos;
 
@@ -114,7 +115,15 @@ public sealed class CrearSolicitudPrestamoHandler
             solicitudPrestamo,
             cancellationToken);
 
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+        catch (ConcurrencyException)
+        {
+            return ApplicationResult<int>.Failure(
+                "El ejemplar ya fue reservado por otro usuario. Intente seleccionar otro ejemplar disponible.");
+        }
 
         return ApplicationResult<int>.Success(solicitudPrestamo.Id);
     }

@@ -30,6 +30,9 @@ public sealed class EjemplarConfiguration : IEntityTypeConfiguration<Ejemplar>
             .IsRequired()
             .HasConversion<int>();
 
+        builder.Property(ejemplar => ejemplar.RowVersion)
+            .IsRowVersion();
+
         builder.Property(ejemplar => ejemplar.FechaCreacion)
             .IsRequired();
 

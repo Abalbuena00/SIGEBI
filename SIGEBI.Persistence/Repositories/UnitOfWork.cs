@@ -1,4 +1,6 @@
-﻿using SIGEBI.Domain.Repository;
+﻿using Microsoft.EntityFrameworkCore;
+using SIGEBI.Domain.Exceptions;
+using SIGEBI.Domain.Repository;
 using SIGEBI.Persistence.Context;
 
 namespace SIGEBI.Persistence.Repositories;
@@ -15,7 +17,15 @@ public sealed class UnitOfWork : IUnitOfWork
     public async Task<int> SaveChangesAsync(
         CancellationToken cancellationToken = default)
     {
-        // Confirma en la base de datos todos los cambios pendientes del DbContext.
-        return await _context.SaveChangesAsync(cancellationToken);
+        try
+        {
+            return await _context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException exception)
+        {
+            throw new ConcurrencyException(
+                "La información fue modificada por otro proceso. Intente nuevamente.",
+                exception);
+        }
     }
 }
