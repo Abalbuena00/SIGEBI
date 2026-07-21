@@ -25,6 +25,7 @@ public sealed class ConsultarCatalogoHandler
             query.Titulo,
             query.Autor,
             query.Categoria,
+            query.Disponible,
             cancellationToken);
 
         var resultado = recursos

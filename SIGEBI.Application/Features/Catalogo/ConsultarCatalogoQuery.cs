@@ -7,4 +7,6 @@ public sealed class ConsultarCatalogoQuery
     public string? Autor { get; init; }
 
     public string? Categoria { get; init; }
+
+    public bool? Disponible { get; init; }
 }

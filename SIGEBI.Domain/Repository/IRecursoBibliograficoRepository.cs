@@ -28,5 +28,6 @@ public interface IRecursoBibliograficoRepository : IBaseRepository<RecursoBiblio
         string? titulo,
         string? autor,
         string? categoria,
+        bool? disponible,
         CancellationToken cancellationToken = default);
 }

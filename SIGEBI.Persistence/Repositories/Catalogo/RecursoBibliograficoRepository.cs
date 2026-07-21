@@ -3,6 +3,7 @@ using SIGEBI.Domain.Entities.Catalogo;
 using SIGEBI.Domain.Repository;
 using SIGEBI.Persistence.Context;
 using SIGEBI.Persistence.Repositories.Base;
+using SIGEBI.Domain.Enums;
 
 namespace SIGEBI.Persistence.Repositories.Catalogo;
 
@@ -87,10 +88,11 @@ public sealed class RecursoBibliograficoRepository
 
     // Permite consultar el catálogo por título, autor o categoría.
     public async Task<IReadOnlyList<RecursoBibliografico>> BuscarAsync(
-        string? titulo,
-        string? autor,
-        string? categoria,
-        CancellationToken cancellationToken = default)
+    string? titulo,
+    string? autor,
+    string? categoria,
+    bool? disponible,
+    CancellationToken cancellationToken = default)
     {
         var query = DbSet
             .AsNoTracking()
@@ -126,6 +128,22 @@ public sealed class RecursoBibliograficoRepository
             query = query.Where(recurso =>
                 recurso.Categorias.Any(recursoCategoria =>
                     EF.Functions.Like(recursoCategoria.Categoria!.Nombre, $"%{categoriaNormalizada}%")));
+        }
+
+        if (disponible.HasValue)
+        {
+            if (disponible.Value)
+            {
+                query = query.Where(recurso =>
+                    recurso.Ejemplares.Any(ejemplar =>
+                        ejemplar.Estado == EstadoEjemplar.Disponible));
+            }
+            else
+            {
+                query = query.Where(recurso =>
+                    !recurso.Ejemplares.Any(ejemplar =>
+                        ejemplar.Estado == EstadoEjemplar.Disponible));
+            }
         }
 
         return await query
