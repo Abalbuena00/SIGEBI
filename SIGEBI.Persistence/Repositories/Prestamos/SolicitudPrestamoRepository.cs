@@ -42,19 +42,16 @@ public sealed class SolicitudPrestamoRepository
             .ToListAsync(cancellationToken);
     }
 
-    // Obtiene solicitudes cuya vigencia ya terminó y que deben pasar a vencidas.
+    // Obtiene las solicitudes que han vencido y aún no han sido revisadas por el personal bibliotecario.
     public async Task<IReadOnlyList<SolicitudPrestamo>> ObtenerVenciblesAsync(
-        DateTime fechaActual,
-        CancellationToken cancellationToken = default)
+    DateTime fechaActual,
+    CancellationToken cancellationToken = default)
     {
         return await DbSet
             .Where(solicitud =>
                 solicitud.Activo &&
-                solicitud.FechaExpiracionSolicitud <= fechaActual &&
-                (
-                    solicitud.Estado == EstadoSolicitudPrestamo.Pendiente ||
-                    solicitud.Estado == EstadoSolicitudPrestamo.AprobadaPendienteRetiro
-                ))
+                solicitud.Estado == EstadoSolicitudPrestamo.Pendiente &&
+                solicitud.FechaExpiracionSolicitud <= fechaActual)
             .ToListAsync(cancellationToken);
     }
 }
