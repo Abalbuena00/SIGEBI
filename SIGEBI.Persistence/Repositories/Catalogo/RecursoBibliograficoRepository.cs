@@ -87,11 +87,13 @@ public sealed class RecursoBibliograficoRepository
     }
 
     // Permite consultar el catálogo por título, autor o categoría.
-    public async Task<IReadOnlyList<RecursoBibliografico>> BuscarAsync(
+    public async Task<(IReadOnlyList<RecursoBibliografico> Items, int TotalCount)> BuscarAsync(
     string? titulo,
     string? autor,
     string? categoria,
     bool? disponible,
+    int pageNumber,
+    int pageSize,
     CancellationToken cancellationToken = default)
     {
         var query = DbSet
@@ -146,8 +148,14 @@ public sealed class RecursoBibliograficoRepository
             }
         }
 
-        return await query
+        int totalCount = await query.CountAsync(cancellationToken);
+
+        var items = await query
             .OrderBy(recurso => recurso.Titulo)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync(cancellationToken);
+
+        return (items, totalCount);
     }
 }

@@ -53,17 +53,20 @@ public sealed class UsuarioRepository : BaseRepository<Usuario>, IUsuarioReposit
             .ToListAsync(cancellationToken);
     }
 
-    // Busca usuarios según criterios de búsqueda, estado y rol.
-    public async Task<IReadOnlyList<Usuario>> BuscarAsync(
+    // Busca usuarios con filtros de texto, estado y rol, y devuelve resultados paginados.
+    public async Task<(IReadOnlyList<Usuario> Items, int TotalCount)> BuscarAsync(
     string? textoBusqueda,
     EstadoUsuario? estado,
     int? rolId,
+    int pageNumber,
+    int pageSize,
     CancellationToken cancellationToken = default)
     {
         var query = Context.Usuarios
             .AsNoTracking()
             .Include(usuario => usuario.Roles)
                 .ThenInclude(usuarioRol => usuarioRol.Rol)
+            .Where(usuario => usuario.Activo)
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(textoBusqueda))
@@ -90,8 +93,14 @@ public sealed class UsuarioRepository : BaseRepository<Usuario>, IUsuarioReposit
                     usuarioRol.RolId == rolId.Value));
         }
 
-        return await query
+        int totalCount = await query.CountAsync(cancellationToken);
+
+        var items = await query
             .OrderBy(usuario => usuario.NombreCompleto)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync(cancellationToken);
+
+        return (items, totalCount);
     }
 }

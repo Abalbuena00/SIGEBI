@@ -24,10 +24,12 @@ public interface IRecursoBibliograficoRepository : IBaseRepository<RecursoBiblio
 
     void RemoverCategoria(RecursoCategoria recursoCategoria);
 
-    Task<IReadOnlyList<RecursoBibliografico>> BuscarAsync(
-        string? titulo,
-        string? autor,
-        string? categoria,
-        bool? disponible,
-        CancellationToken cancellationToken = default);
+    Task<(IReadOnlyList<RecursoBibliografico> Items, int TotalCount)> BuscarAsync(
+    string? titulo,
+    string? autor,
+    string? categoria,
+    bool? disponible,
+    int pageNumber,
+    int pageSize,
+    CancellationToken cancellationToken = default);
 }

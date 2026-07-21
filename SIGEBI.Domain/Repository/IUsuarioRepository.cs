@@ -16,9 +16,11 @@ public interface IUsuarioRepository : IBaseRepository<Usuario>
     Task<IReadOnlyList<Usuario>> ObtenerUsuariosActivosAsync(
         CancellationToken cancellationToken = default);
 
-    Task<IReadOnlyList<Usuario>> BuscarAsync(
+    Task<(IReadOnlyList<Usuario> Items, int TotalCount)> BuscarAsync(
     string? textoBusqueda,
     EstadoUsuario? estado,
     int? rolId,
+    int pageNumber,
+    int pageSize,
     CancellationToken cancellationToken = default);
 }
