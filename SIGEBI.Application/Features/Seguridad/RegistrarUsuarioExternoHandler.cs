@@ -3,6 +3,7 @@ using SIGEBI.Application.Common;
 using SIGEBI.Domain.Entities.Seguridad;
 using SIGEBI.Domain.Enums;
 using SIGEBI.Domain.Repository;
+using SIGEBI.Application.Abstractions.Auditoria;
 
 namespace SIGEBI.Application.Features.Seguridad;
 
@@ -11,17 +12,20 @@ public sealed class RegistrarUsuarioExternoHandler
     private readonly IUsuarioRepository _usuarioRepository;
     private readonly IRolRepository _rolRepository;
     private readonly IPasswordHashService _passwordHashService;
+    private readonly IAuditoriaService _auditoriaService;
     private readonly IUnitOfWork _unitOfWork;
 
     public RegistrarUsuarioExternoHandler(
         IUsuarioRepository usuarioRepository,
         IRolRepository rolRepository,
         IPasswordHashService passwordHashService,
+        IAuditoriaService auditoriaService,
         IUnitOfWork unitOfWork)
     {
         _usuarioRepository = usuarioRepository;
         _rolRepository = rolRepository;
         _passwordHashService = passwordHashService;
+        _auditoriaService = auditoriaService;
         _unitOfWork = unitOfWork;
     }
 
@@ -78,7 +82,16 @@ public sealed class RegistrarUsuarioExternoHandler
             usuario,
             cancellationToken);
 
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _auditoriaService.RegistrarAsync(
+            usuarioId: null,
+            modulo: "Seguridad",
+            accion: "Registrar usuario externo",
+            resultado: ResultadoAuditoria.Exitoso,
+            entidadAfectada: "Usuario",
+            entidadAfectadaId: null,
+            detalle: $"Se registró un usuario externo con correo {usuario.Correo} y rol {rol.Nombre}.",
+            origen: "Portal web",
+            cancellationToken: cancellationToken);
 
         return ApplicationResult<int>.Success(usuario.Id);
     }

@@ -3,6 +3,7 @@ using SIGEBI.Application.Common;
 using SIGEBI.Domain.Entities.Seguridad;
 using SIGEBI.Domain.Enums;
 using SIGEBI.Domain.Repository;
+using SIGEBI.Application.Abstractions.Auditoria;
 
 namespace SIGEBI.Application.Features.Seguridad;
 
@@ -11,17 +12,20 @@ public sealed class CrearUsuarioInternoHandler
     private readonly IUsuarioRepository _usuarioRepository;
     private readonly IRolRepository _rolRepository;
     private readonly IPasswordHashService _passwordHashService;
+    private readonly IAuditoriaService _auditoriaService;
     private readonly IUnitOfWork _unitOfWork;
 
     public CrearUsuarioInternoHandler(
         IUsuarioRepository usuarioRepository,
         IRolRepository rolRepository,
         IPasswordHashService passwordHashService,
+        IAuditoriaService auditoriaService,
         IUnitOfWork unitOfWork)
     {
         _usuarioRepository = usuarioRepository;
         _rolRepository = rolRepository;
         _passwordHashService = passwordHashService;
+        _auditoriaService = auditoriaService;
         _unitOfWork = unitOfWork;
     }
 
@@ -81,7 +85,16 @@ public sealed class CrearUsuarioInternoHandler
             usuario,
             cancellationToken);
 
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _auditoriaService.RegistrarAsync(
+            usuarioId: command.UsuarioResponsableId,
+            modulo: "Seguridad",
+            accion: "Crear usuario interno",
+            resultado: ResultadoAuditoria.Exitoso,
+            entidadAfectada: "Usuario",
+            entidadAfectadaId: null,
+            detalle: $"Se creó el usuario interno {usuario.Correo} con rol {rol.Nombre}.",
+            origen: "Aplicación institucional",
+            cancellationToken: cancellationToken);
 
         return ApplicationResult<int>.Success(usuario.Id);
     }

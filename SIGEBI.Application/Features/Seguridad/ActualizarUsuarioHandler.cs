@@ -1,19 +1,23 @@
 ﻿using SIGEBI.Application.Common;
 using SIGEBI.Domain.Enums;
 using SIGEBI.Domain.Repository;
+using SIGEBI.Application.Abstractions.Auditoria;
 
 namespace SIGEBI.Application.Features.Seguridad;
 
 public sealed class ActualizarUsuarioHandler
 {
     private readonly IUsuarioRepository _usuarioRepository;
+    private readonly IAuditoriaService _auditoriaService;
     private readonly IUnitOfWork _unitOfWork;
 
     public ActualizarUsuarioHandler(
         IUsuarioRepository usuarioRepository,
+        IAuditoriaService auditoriaService,
         IUnitOfWork unitOfWork)
     {
         _usuarioRepository = usuarioRepository;
+        _auditoriaService = auditoriaService;
         _unitOfWork = unitOfWork;
     }
 
@@ -45,10 +49,29 @@ public sealed class ActualizarUsuarioHandler
         if (usuarioResponsable.Estado != EstadoUsuario.Activo)
             return ApplicationResult.Failure("El usuario responsable no se encuentra activo.");
 
+        string nombreAnterior = usuario.NombreCompleto;
+        string? matriculaAnterior = usuario.Matricula;
+        string? numeroEmpleadoAnterior = usuario.NumeroEmpleado;
+
         usuario.ActualizarDatos(
             command.NombreCompleto,
             command.Matricula,
             command.NumeroEmpleado);
+
+        await _auditoriaService.RegistrarAsync(
+            usuarioId: command.UsuarioResponsableId,
+            modulo: "Seguridad",
+            accion: "Actualizar usuario",
+            resultado: ResultadoAuditoria.Exitoso,
+            entidadAfectada: "Usuario",
+            entidadAfectadaId: usuario.Id,
+            detalle:
+                $"Se actualizó el usuario {usuario.Correo}. " +
+                $"Nombre anterior: {nombreAnterior}; nombre nuevo: {usuario.NombreCompleto}. " +
+                $"Matrícula anterior: {matriculaAnterior ?? "N/A"}; matrícula nueva: {usuario.Matricula ?? "N/A"}. " +
+                $"Número empleado anterior: {numeroEmpleadoAnterior ?? "N/A"}; número empleado nuevo: {usuario.NumeroEmpleado ?? "N/A"}.",
+            origen: "Aplicación institucional",
+            cancellationToken: cancellationToken);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
