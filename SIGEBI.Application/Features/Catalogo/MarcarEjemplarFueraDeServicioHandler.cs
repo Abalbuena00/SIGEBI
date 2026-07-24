@@ -2,6 +2,7 @@
 using SIGEBI.Domain.Entities.Catalogo;
 using SIGEBI.Domain.Enums;
 using SIGEBI.Domain.Repository;
+using SIGEBI.Application.Abstractions.Auditoria;
 
 namespace SIGEBI.Application.Features.Catalogo;
 
@@ -9,15 +10,18 @@ public sealed class MarcarEjemplarFueraDeServicioHandler
 {
     private readonly IEjemplarRepository _ejemplarRepository;
     private readonly IUsuarioRepository _usuarioRepository;
+    private readonly IAuditoriaService _auditoriaService;
     private readonly IUnitOfWork _unitOfWork;
 
     public MarcarEjemplarFueraDeServicioHandler(
         IEjemplarRepository ejemplarRepository,
         IUsuarioRepository usuarioRepository,
+        IAuditoriaService auditoriaService,
         IUnitOfWork unitOfWork)
     {
         _ejemplarRepository = ejemplarRepository;
         _usuarioRepository = usuarioRepository;
+        _auditoriaService = auditoriaService;
         _unitOfWork = unitOfWork;
     }
 
@@ -65,7 +69,19 @@ public sealed class MarcarEjemplarFueraDeServicioHandler
 
         ejemplar.RegistrarHistorialEstado(historial);
 
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await _auditoriaService.RegistrarAsync(
+            usuarioId: command.UsuarioResponsableId,
+            modulo: "Catálogo",
+            accion: "Marcar ejemplar fuera de servicio",
+            resultado: ResultadoAuditoria.Exitoso,
+            entidadAfectada: "Ejemplar",
+            entidadAfectadaId: ejemplar.Id,
+            detalle:
+                $"Se marcó fuera de servicio el ejemplar {ejemplar.CodigoInterno}. " +
+                $"Estado anterior: {estadoAnterior}; estado nuevo: {ejemplar.Estado}. " +
+                $"Motivo: {command.Motivo}.",
+            origen: "Aplicación institucional",
+            cancellationToken: cancellationToken);
 
         return ApplicationResult.Success();
     }

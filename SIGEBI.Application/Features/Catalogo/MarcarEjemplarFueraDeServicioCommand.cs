@@ -1,4 +1,5 @@
 ﻿namespace SIGEBI.Application.Features.Catalogo;
+using SIGEBI.Application.Abstractions.Auditoria;
 
 public sealed class MarcarEjemplarFueraDeServicioCommand
 {

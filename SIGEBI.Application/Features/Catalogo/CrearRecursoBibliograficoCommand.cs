@@ -2,6 +2,8 @@
 
 public sealed class CrearRecursoBibliograficoCommand
 {
+    public int UsuarioResponsableId { get; init; }
+
     public string CodigoInterno { get; init; } = string.Empty;
 
     public string Titulo { get; init; } = string.Empty;

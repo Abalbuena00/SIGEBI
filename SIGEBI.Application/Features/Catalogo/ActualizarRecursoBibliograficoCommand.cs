@@ -4,6 +4,8 @@ public sealed class ActualizarRecursoBibliograficoCommand
 {
     public int RecursoBibliograficoId { get; init; }
 
+    public int UsuarioResponsableId { get; init; }
+
     public string Titulo { get; init; } = string.Empty;
 
     public string? Isbn { get; init; }
