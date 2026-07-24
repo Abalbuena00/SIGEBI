@@ -3,6 +3,7 @@ using SIGEBI.Domain.Entities.Prestamos;
 using SIGEBI.Domain.Enums;
 using SIGEBI.Domain.Repository;
 using SIGEBI.Domain.Exceptions;
+using SIGEBI.Application.Abstractions.Auditoria;
 
 namespace SIGEBI.Application.Features.Prestamos;
 
@@ -14,6 +15,7 @@ public sealed class CrearSolicitudPrestamoHandler
     private readonly IPrestamoRepository _prestamoRepository;
     private readonly IPoliticaPrestamoRepository _politicaPrestamoRepository;
     private readonly ISolicitudPrestamoRepository _solicitudPrestamoRepository;
+    private readonly IAuditoriaService _auditoriaService;
     private readonly IUnitOfWork _unitOfWork;
 
     public CrearSolicitudPrestamoHandler(
@@ -23,6 +25,7 @@ public sealed class CrearSolicitudPrestamoHandler
         IPrestamoRepository prestamoRepository,
         IPoliticaPrestamoRepository politicaPrestamoRepository,
         ISolicitudPrestamoRepository solicitudPrestamoRepository,
+        IAuditoriaService auditoriaService,
         IUnitOfWork unitOfWork)
     {
         _usuarioRepository = usuarioRepository;
@@ -31,6 +34,7 @@ public sealed class CrearSolicitudPrestamoHandler
         _prestamoRepository = prestamoRepository;
         _politicaPrestamoRepository = politicaPrestamoRepository;
         _solicitudPrestamoRepository = solicitudPrestamoRepository;
+        _auditoriaService = auditoriaService;
         _unitOfWork = unitOfWork;
     }
 
@@ -111,9 +115,18 @@ public sealed class CrearSolicitudPrestamoHandler
             command.EjemplarId,
             politica.HorasReservaTemporal);
 
-        await _solicitudPrestamoRepository.AgregarAsync(
-            solicitudPrestamo,
-            cancellationToken);
+        await _auditoriaService.RegistrarAsync(
+            usuarioId: command.UsuarioId,
+            modulo: "Préstamos",
+            accion: "Crear solicitud de préstamo",
+            resultado: ResultadoAuditoria.Exitoso,
+            entidadAfectada: "SolicitudPrestamo",
+            entidadAfectadaId: null,
+            detalle:
+                $"Se creó una solicitud de préstamo para el ejemplar {command.EjemplarId}. " +
+                $"El ejemplar fue reservado temporalmente.",
+            origen: "Portal web",
+            cancellationToken: cancellationToken);
 
         try
         {

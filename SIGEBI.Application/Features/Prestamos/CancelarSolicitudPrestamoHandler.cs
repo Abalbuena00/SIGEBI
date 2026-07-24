@@ -1,6 +1,7 @@
 ﻿using SIGEBI.Application.Common;
 using SIGEBI.Domain.Enums;
 using SIGEBI.Domain.Repository;
+using SIGEBI.Application.Abstractions.Auditoria;
 
 namespace SIGEBI.Application.Features.Prestamos;
 
@@ -10,6 +11,7 @@ public sealed class CancelarSolicitudPrestamoHandler
     private readonly IUsuarioRepository _usuarioRepository;
     private readonly IReservaTemporalRepository _reservaTemporalRepository;
     private readonly IEjemplarRepository _ejemplarRepository;
+    private readonly IAuditoriaService _auditoriaService;
     private readonly IUnitOfWork _unitOfWork;
 
     public CancelarSolicitudPrestamoHandler(
@@ -17,12 +19,14 @@ public sealed class CancelarSolicitudPrestamoHandler
         IUsuarioRepository usuarioRepository,
         IReservaTemporalRepository reservaTemporalRepository,
         IEjemplarRepository ejemplarRepository,
+        IAuditoriaService auditoriaService,
         IUnitOfWork unitOfWork)
     {
         _solicitudPrestamoRepository = solicitudPrestamoRepository;
         _usuarioRepository = usuarioRepository;
         _reservaTemporalRepository = reservaTemporalRepository;
         _ejemplarRepository = ejemplarRepository;
+        _auditoriaService = auditoriaService;
         _unitOfWork = unitOfWork;
     }
 
@@ -98,6 +102,19 @@ public sealed class CancelarSolicitudPrestamoHandler
 
         if (!resultadoCancelarSolicitud.IsSuccess)
             return ApplicationResult.Failure(resultadoCancelarSolicitud.Error!);
+
+        await _auditoriaService.RegistrarAsync(
+            usuarioId: command.UsuarioCancelaId,
+            modulo: "Préstamos",
+            accion: "Cancelar solicitud de préstamo",
+            resultado: ResultadoAuditoria.Exitoso,
+            entidadAfectada: "SolicitudPrestamo",
+            entidadAfectadaId: solicitud.Id,
+            detalle:
+                $"El usuario {command.UsuarioCancelaId} canceló la solicitud de préstamo {solicitud.Id}. " +
+                $"Ejemplar liberado: {solicitud.EjemplarId}.",
+            origen: "Portal web",
+            cancellationToken: cancellationToken);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 

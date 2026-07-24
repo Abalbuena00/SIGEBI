@@ -1,6 +1,7 @@
 ﻿using SIGEBI.Application.Common;
 using SIGEBI.Domain.Enums;
 using SIGEBI.Domain.Repository;
+using SIGEBI.Application.Abstractions.Auditoria;
 
 namespace SIGEBI.Application.Features.Prestamos;
 
@@ -9,17 +10,20 @@ public sealed class RechazarSolicitudPrestamoHandler
     private readonly ISolicitudPrestamoRepository _solicitudPrestamoRepository;
     private readonly IEjemplarRepository _ejemplarRepository;
     private readonly IUsuarioRepository _usuarioRepository;
+    private readonly IAuditoriaService _auditoriaService;
     private readonly IUnitOfWork _unitOfWork;
 
     public RechazarSolicitudPrestamoHandler(
         ISolicitudPrestamoRepository solicitudPrestamoRepository,
         IEjemplarRepository ejemplarRepository,
         IUsuarioRepository usuarioRepository,
+        IAuditoriaService auditoriaService,
         IUnitOfWork unitOfWork)
     {
         _solicitudPrestamoRepository = solicitudPrestamoRepository;
         _ejemplarRepository = ejemplarRepository;
         _usuarioRepository = usuarioRepository;
+        _auditoriaService = auditoriaService;
         _unitOfWork = unitOfWork;
     }
 
@@ -76,6 +80,20 @@ public sealed class RechazarSolicitudPrestamoHandler
 
         if (!resultadoLiberarEjemplar.IsSuccess)
             return ApplicationResult.Failure(resultadoLiberarEjemplar.Error!);
+
+        await _auditoriaService.RegistrarAsync(
+            usuarioId: command.UsuarioRechazaId,
+            modulo: "Préstamos",
+            accion: "Rechazar solicitud de préstamo",
+            resultado: ResultadoAuditoria.Exitoso,
+            entidadAfectada: "SolicitudPrestamo",
+            entidadAfectadaId: solicitud.Id,
+            detalle:
+                $"Se rechazó la solicitud de préstamo {solicitud.Id}. " +
+                $"Usuario solicitante: {solicitud.UsuarioId}. Ejemplar: {solicitud.EjemplarId}. " +
+                $"Motivo: {command.Motivo}. El ejemplar fue liberado.",
+            origen: "Aplicación institucional",
+            cancellationToken: cancellationToken);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 

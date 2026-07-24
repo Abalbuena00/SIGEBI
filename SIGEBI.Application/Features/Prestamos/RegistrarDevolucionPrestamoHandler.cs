@@ -3,6 +3,7 @@ using SIGEBI.Domain.Entities.Penalizaciones;
 using SIGEBI.Domain.Entities.Prestamos;
 using SIGEBI.Domain.Enums;
 using SIGEBI.Domain.Repository;
+using SIGEBI.Application.Abstractions.Auditoria;
 
 namespace SIGEBI.Application.Features.Prestamos;
 
@@ -13,6 +14,7 @@ public sealed class RegistrarDevolucionPrestamoHandler
     private readonly IUsuarioRepository _usuarioRepository;
     private readonly IPoliticaPrestamoRepository _politicaPrestamoRepository;
     private readonly IPenalizacionRepository _penalizacionRepository;
+    private readonly IAuditoriaService _auditoriaService;
     private readonly IUnitOfWork _unitOfWork;
 
     public RegistrarDevolucionPrestamoHandler(
@@ -21,6 +23,7 @@ public sealed class RegistrarDevolucionPrestamoHandler
         IUsuarioRepository usuarioRepository,
         IPoliticaPrestamoRepository politicaPrestamoRepository,
         IPenalizacionRepository penalizacionRepository,
+        IAuditoriaService auditoriaService,
         IUnitOfWork unitOfWork)
     {
         _prestamoRepository = prestamoRepository;
@@ -28,6 +31,7 @@ public sealed class RegistrarDevolucionPrestamoHandler
         _usuarioRepository = usuarioRepository;
         _politicaPrestamoRepository = politicaPrestamoRepository;
         _penalizacionRepository = penalizacionRepository;
+        _auditoriaService = auditoriaService;
         _unitOfWork = unitOfWork;
     }
 
@@ -107,6 +111,22 @@ public sealed class RegistrarDevolucionPrestamoHandler
             usuarioSolicitante.NumeroEmpleado,
             devolucion,
             cancellationToken);
+
+        await _auditoriaService.RegistrarAsync(
+            usuarioId: command.UsuarioBibliotecarioId,
+            modulo: "Devoluciones",
+            accion: "Registrar devolución de préstamo",
+            resultado: ResultadoAuditoria.Exitoso,
+            entidadAfectada: "Prestamo",
+            entidadAfectadaId: prestamo.Id,
+            detalle:
+                $"Se registró la devolución del préstamo {prestamo.Id}. " +
+                $"Usuario: {prestamo.UsuarioId}. Ejemplar: {prestamo.EjemplarId}. " +
+                $"Fecha devolución: {fechaDevolucion:yyyy-MM-dd HH:mm:ss}. " +
+                $"Devolución tardía: {(devolucion.FueTardia ? "Sí" : "No")}. " +
+                $"Días de retraso: {devolucion.DiasRetraso}.",
+            origen: "Aplicación institucional",
+            cancellationToken: cancellationToken);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 

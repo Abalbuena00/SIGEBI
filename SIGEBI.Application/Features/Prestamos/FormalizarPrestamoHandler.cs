@@ -2,6 +2,7 @@
 using SIGEBI.Domain.Entities.Prestamos;
 using SIGEBI.Domain.Enums;
 using SIGEBI.Domain.Repository;
+using SIGEBI.Application.Abstractions.Auditoria;
 
 namespace SIGEBI.Application.Features.Prestamos;
 
@@ -13,6 +14,7 @@ public sealed class FormalizarPrestamoHandler
     private readonly IUsuarioRepository _usuarioRepository;
     private readonly IPoliticaPrestamoRepository _politicaPrestamoRepository;
     private readonly IPrestamoRepository _prestamoRepository;
+    private readonly IAuditoriaService _auditoriaService;
     private readonly IUnitOfWork _unitOfWork;
 
     public FormalizarPrestamoHandler(
@@ -22,6 +24,7 @@ public sealed class FormalizarPrestamoHandler
         IUsuarioRepository usuarioRepository,
         IPoliticaPrestamoRepository politicaPrestamoRepository,
         IPrestamoRepository prestamoRepository,
+        IAuditoriaService auditoriaService,
         IUnitOfWork unitOfWork)
     {
         _solicitudPrestamoRepository = solicitudPrestamoRepository;
@@ -30,6 +33,7 @@ public sealed class FormalizarPrestamoHandler
         _usuarioRepository = usuarioRepository;
         _politicaPrestamoRepository = politicaPrestamoRepository;
         _prestamoRepository = prestamoRepository;
+        _auditoriaService = auditoriaService;
         _unitOfWork = unitOfWork;
     }
 
@@ -150,6 +154,20 @@ public sealed class FormalizarPrestamoHandler
         await _prestamoRepository.AgregarAsync(
             prestamo,
             cancellationToken);
+
+        await _auditoriaService.RegistrarAsync(
+            usuarioId: command.UsuarioBibliotecarioId,
+            modulo: "Préstamos",
+            accion: "Formalizar préstamo",
+            resultado: ResultadoAuditoria.Exitoso,
+            entidadAfectada: "Prestamo",
+            entidadAfectadaId: null,
+            detalle:
+                $"Se formalizó el préstamo para la solicitud {solicitud.Id}. " +
+                $"Usuario solicitante: {solicitud.UsuarioId}. Ejemplar: {solicitud.EjemplarId}. " +
+                $"Fecha límite de devolución: {fechaLimiteDevolucion:yyyy-MM-dd HH:mm:ss}.",
+            origen: "Aplicación institucional",
+            cancellationToken: cancellationToken);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 

@@ -2,6 +2,7 @@
 using SIGEBI.Domain.Entities.Prestamos;
 using SIGEBI.Domain.Enums;
 using SIGEBI.Domain.Repository;
+using SIGEBI.Application.Abstractions.Auditoria;
 
 namespace SIGEBI.Application.Features.Prestamos;
 
@@ -12,6 +13,7 @@ public sealed class AprobarSolicitudPrestamoHandler
     private readonly IUsuarioRepository _usuarioRepository;
     private readonly IPoliticaPrestamoRepository _politicaPrestamoRepository;
     private readonly IReservaTemporalRepository _reservaTemporalRepository;
+    private readonly IAuditoriaService _auditoriaService;
     private readonly IUnitOfWork _unitOfWork;
 
     public AprobarSolicitudPrestamoHandler(
@@ -20,6 +22,7 @@ public sealed class AprobarSolicitudPrestamoHandler
         IUsuarioRepository usuarioRepository,
         IPoliticaPrestamoRepository politicaPrestamoRepository,
         IReservaTemporalRepository reservaTemporalRepository,
+        IAuditoriaService auditoriaService,
         IUnitOfWork unitOfWork)
     {
         _solicitudPrestamoRepository = solicitudPrestamoRepository;
@@ -27,6 +30,7 @@ public sealed class AprobarSolicitudPrestamoHandler
         _usuarioRepository = usuarioRepository;
         _politicaPrestamoRepository = politicaPrestamoRepository;
         _reservaTemporalRepository = reservaTemporalRepository;
+        _auditoriaService = auditoriaService;
         _unitOfWork = unitOfWork;
     }
 
@@ -113,6 +117,20 @@ public sealed class AprobarSolicitudPrestamoHandler
         await _reservaTemporalRepository.AgregarAsync(
             reservaTemporal,
             cancellationToken);
+
+        await _auditoriaService.RegistrarAsync(
+            usuarioId: command.UsuarioAprobadorId,
+            modulo: "Préstamos",
+            accion: "Aprobar solicitud de préstamo",
+            resultado: ResultadoAuditoria.Exitoso,
+            entidadAfectada: "SolicitudPrestamo",
+            entidadAfectadaId: solicitud.Id,
+            detalle:
+                $"Se aprobó la solicitud de préstamo {solicitud.Id}. " +
+                $"Usuario solicitante: {solicitud.UsuarioId}. Ejemplar: {solicitud.EjemplarId}. " +
+                $"Se creó una reserva temporal para retiro.",
+            origen: "Aplicación institucional",
+            cancellationToken: cancellationToken);
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
