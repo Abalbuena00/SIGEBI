@@ -3,6 +3,7 @@ using SIGEBI.Domain.Entities.Prestamos;
 using SIGEBI.Domain.Enums;
 using SIGEBI.Domain.Repository;
 using SIGEBI.Application.Abstractions.Auditoria;
+using SIGEBI.Application.Abstractions.Notificaciones;
 
 namespace SIGEBI.Application.Features.Prestamos;
 
@@ -15,6 +16,7 @@ public sealed class FormalizarPrestamoHandler
     private readonly IPoliticaPrestamoRepository _politicaPrestamoRepository;
     private readonly IPrestamoRepository _prestamoRepository;
     private readonly IAuditoriaService _auditoriaService;
+    private readonly INotificacionService _notificacionService;
     private readonly IUnitOfWork _unitOfWork;
 
     public FormalizarPrestamoHandler(
@@ -25,6 +27,7 @@ public sealed class FormalizarPrestamoHandler
         IPoliticaPrestamoRepository politicaPrestamoRepository,
         IPrestamoRepository prestamoRepository,
         IAuditoriaService auditoriaService,
+        INotificacionService notificacionService,
         IUnitOfWork unitOfWork)
     {
         _solicitudPrestamoRepository = solicitudPrestamoRepository;
@@ -34,6 +37,7 @@ public sealed class FormalizarPrestamoHandler
         _politicaPrestamoRepository = politicaPrestamoRepository;
         _prestamoRepository = prestamoRepository;
         _auditoriaService = auditoriaService;
+        _notificacionService = notificacionService;
         _unitOfWork = unitOfWork;
     }
 
@@ -154,6 +158,17 @@ public sealed class FormalizarPrestamoHandler
         await _prestamoRepository.AgregarAsync(
             prestamo,
             cancellationToken);
+
+        await _notificacionService.CrearAsync(
+            usuarioDestinatarioId: solicitud.UsuarioId,
+            tipo: TipoNotificacion.PrestamoFormalizado,
+            titulo: "Préstamo formalizado",
+            mensaje:
+                $"Su préstamo fue formalizado correctamente. " +
+                $"La fecha límite de devolución es {fechaLimiteDevolucion:yyyy-MM-dd HH:mm:ss}.",
+            entidadReferencia: "SolicitudPrestamo",
+            entidadReferenciaId: solicitud.Id,
+            cancellationToken: cancellationToken);
 
         await _auditoriaService.RegistrarAsync(
             usuarioId: command.UsuarioBibliotecarioId,

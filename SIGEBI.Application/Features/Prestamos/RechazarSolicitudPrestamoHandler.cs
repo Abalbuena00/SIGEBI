@@ -2,6 +2,7 @@
 using SIGEBI.Domain.Enums;
 using SIGEBI.Domain.Repository;
 using SIGEBI.Application.Abstractions.Auditoria;
+using SIGEBI.Application.Abstractions.Notificaciones;
 
 namespace SIGEBI.Application.Features.Prestamos;
 
@@ -11,6 +12,7 @@ public sealed class RechazarSolicitudPrestamoHandler
     private readonly IEjemplarRepository _ejemplarRepository;
     private readonly IUsuarioRepository _usuarioRepository;
     private readonly IAuditoriaService _auditoriaService;
+    private readonly INotificacionService _notificacionService;
     private readonly IUnitOfWork _unitOfWork;
 
     public RechazarSolicitudPrestamoHandler(
@@ -18,12 +20,14 @@ public sealed class RechazarSolicitudPrestamoHandler
         IEjemplarRepository ejemplarRepository,
         IUsuarioRepository usuarioRepository,
         IAuditoriaService auditoriaService,
+        INotificacionService notificacionService,
         IUnitOfWork unitOfWork)
     {
         _solicitudPrestamoRepository = solicitudPrestamoRepository;
         _ejemplarRepository = ejemplarRepository;
         _usuarioRepository = usuarioRepository;
         _auditoriaService = auditoriaService;
+        _notificacionService = notificacionService;
         _unitOfWork = unitOfWork;
     }
 
@@ -80,6 +84,16 @@ public sealed class RechazarSolicitudPrestamoHandler
 
         if (!resultadoLiberarEjemplar.IsSuccess)
             return ApplicationResult.Failure(resultadoLiberarEjemplar.Error!);
+
+        await _notificacionService.CrearAsync(
+            usuarioDestinatarioId: solicitud.UsuarioId,
+            tipo: TipoNotificacion.SolicitudRechazada,
+            titulo: "Solicitud de préstamo rechazada",
+            mensaje:
+                $"Su solicitud de préstamo fue rechazada. Motivo: {command.Motivo}.",
+            entidadReferencia: "SolicitudPrestamo",
+            entidadReferenciaId: solicitud.Id,
+            cancellationToken: cancellationToken);
 
         await _auditoriaService.RegistrarAsync(
             usuarioId: command.UsuarioRechazaId,

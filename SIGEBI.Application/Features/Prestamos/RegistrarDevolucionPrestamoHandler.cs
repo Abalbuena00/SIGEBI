@@ -4,6 +4,7 @@ using SIGEBI.Domain.Entities.Prestamos;
 using SIGEBI.Domain.Enums;
 using SIGEBI.Domain.Repository;
 using SIGEBI.Application.Abstractions.Auditoria;
+using SIGEBI.Application.Abstractions.Notificaciones;
 
 namespace SIGEBI.Application.Features.Prestamos;
 
@@ -15,6 +16,7 @@ public sealed class RegistrarDevolucionPrestamoHandler
     private readonly IPoliticaPrestamoRepository _politicaPrestamoRepository;
     private readonly IPenalizacionRepository _penalizacionRepository;
     private readonly IAuditoriaService _auditoriaService;
+    private readonly INotificacionService _notificacionService;
     private readonly IUnitOfWork _unitOfWork;
 
     public RegistrarDevolucionPrestamoHandler(
@@ -24,6 +26,7 @@ public sealed class RegistrarDevolucionPrestamoHandler
         IPoliticaPrestamoRepository politicaPrestamoRepository,
         IPenalizacionRepository penalizacionRepository,
         IAuditoriaService auditoriaService,
+        INotificacionService notificacionService,
         IUnitOfWork unitOfWork)
     {
         _prestamoRepository = prestamoRepository;
@@ -32,6 +35,7 @@ public sealed class RegistrarDevolucionPrestamoHandler
         _politicaPrestamoRepository = politicaPrestamoRepository;
         _penalizacionRepository = penalizacionRepository;
         _auditoriaService = auditoriaService;
+        _notificacionService = notificacionService;
         _unitOfWork = unitOfWork;
     }
 
@@ -105,12 +109,26 @@ public sealed class RegistrarDevolucionPrestamoHandler
 
         prestamo.AgregarDevolucion(devolucion);
 
-        await CrearPenalizacionSiAplicaAsync(
+        bool penalizacionGenerada = await CrearPenalizacionSiAplicaAsync(
             prestamo,
             usuarioSolicitante.Matricula,
             usuarioSolicitante.NumeroEmpleado,
             devolucion,
             cancellationToken);
+
+        if (penalizacionGenerada)
+        {
+            await _notificacionService.CrearAsync(
+                usuarioDestinatarioId: prestamo.UsuarioId,
+                tipo: TipoNotificacion.PenalizacionGenerada,
+                titulo: "Penalización generada",
+                mensaje:
+                    $"Se generó una penalización por devolución tardía del préstamo {prestamo.Id}. " +
+                    $"Días de retraso: {devolucion.DiasRetraso}.",
+                entidadReferencia: "Prestamo",
+                entidadReferenciaId: prestamo.Id,
+                cancellationToken: cancellationToken);
+        }
 
         await _auditoriaService.RegistrarAsync(
             usuarioId: command.UsuarioBibliotecarioId,
@@ -133,7 +151,7 @@ public sealed class RegistrarDevolucionPrestamoHandler
         return ApplicationResult.Success();
     }
 
-    private async Task CrearPenalizacionSiAplicaAsync(
+    private async Task<bool> CrearPenalizacionSiAplicaAsync(
         Prestamo prestamo,
         string? matricula,
         string? numeroEmpleado,
@@ -141,7 +159,7 @@ public sealed class RegistrarDevolucionPrestamoHandler
         CancellationToken cancellationToken)
     {
         if (!devolucion.FueTardia)
-            return;
+            return false;
 
         TipoMiembro tipoMiembro = DeterminarTipoMiembro(
             matricula,
@@ -152,16 +170,16 @@ public sealed class RegistrarDevolucionPrestamoHandler
             cancellationToken);
 
         if (politica is null)
-            return;
+            return false;
 
         if (!politica.PenalizaRetraso)
-            return;
+            return false;
 
         int diasSuspension = devolucion.DiasRetraso *
                              politica.DiasSuspensionPorDiaRetraso;
 
         if (diasSuspension <= 0)
-            return;
+            return false;
 
         var penalizacion = new Penalizacion(
             prestamo.UsuarioId,
@@ -171,6 +189,8 @@ public sealed class RegistrarDevolucionPrestamoHandler
         await _penalizacionRepository.AgregarAsync(
             penalizacion,
             cancellationToken);
+
+        return true;
     }
 
     private static TipoMiembro DeterminarTipoMiembro(

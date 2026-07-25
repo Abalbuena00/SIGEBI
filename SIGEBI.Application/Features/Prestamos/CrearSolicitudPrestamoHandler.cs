@@ -4,6 +4,7 @@ using SIGEBI.Domain.Enums;
 using SIGEBI.Domain.Repository;
 using SIGEBI.Domain.Exceptions;
 using SIGEBI.Application.Abstractions.Auditoria;
+using SIGEBI.Application.Abstractions.Notificaciones;
 
 namespace SIGEBI.Application.Features.Prestamos;
 
@@ -16,6 +17,7 @@ public sealed class CrearSolicitudPrestamoHandler
     private readonly IPoliticaPrestamoRepository _politicaPrestamoRepository;
     private readonly ISolicitudPrestamoRepository _solicitudPrestamoRepository;
     private readonly IAuditoriaService _auditoriaService;
+    private readonly INotificacionService _notificacionService;
     private readonly IUnitOfWork _unitOfWork;
 
     public CrearSolicitudPrestamoHandler(
@@ -26,6 +28,7 @@ public sealed class CrearSolicitudPrestamoHandler
         IPoliticaPrestamoRepository politicaPrestamoRepository,
         ISolicitudPrestamoRepository solicitudPrestamoRepository,
         IAuditoriaService auditoriaService,
+        INotificacionService notificacionService,
         IUnitOfWork unitOfWork)
     {
         _usuarioRepository = usuarioRepository;
@@ -35,6 +38,7 @@ public sealed class CrearSolicitudPrestamoHandler
         _politicaPrestamoRepository = politicaPrestamoRepository;
         _solicitudPrestamoRepository = solicitudPrestamoRepository;
         _auditoriaService = auditoriaService;
+        _notificacionService = notificacionService;
         _unitOfWork = unitOfWork;
     }
 
@@ -117,7 +121,18 @@ public sealed class CrearSolicitudPrestamoHandler
 
         await _solicitudPrestamoRepository.AgregarAsync(
             solicitudPrestamo,
-            cancellationToken);
+            cancellationToken); 
+
+        await _notificacionService.CrearAsync(
+            usuarioDestinatarioId: command.UsuarioId,
+            tipo: TipoNotificacion.SolicitudRecibida,
+            titulo: "Solicitud de préstamo recibida",
+            mensaje:
+                "Su solicitud de préstamo fue recibida correctamente. " +
+                "El ejemplar quedó reservado temporalmente mientras se procesa la solicitud.",
+            entidadReferencia: "Ejemplar",
+            entidadReferenciaId: command.EjemplarId,
+            cancellationToken: cancellationToken);
 
         await _auditoriaService.RegistrarAsync(
             usuarioId: command.UsuarioId,
