@@ -15,6 +15,28 @@ public sealed class PenalizacionRepository
     {
     }
 
+    public async Task<IReadOnlyList<Penalizacion>> ObtenerPorUsuarioAsync(
+        int usuarioId,
+        EstadoPenalizacion? estado = null,
+        CancellationToken cancellationToken = default)
+    {
+        var consulta = DbSet
+            .AsNoTracking()
+            .Where(penalizacion =>
+                penalizacion.Activo &&
+                penalizacion.UsuarioId == usuarioId);
+
+        if (estado.HasValue)
+        {
+            consulta = consulta.Where(penalizacion =>
+                penalizacion.Estado == estado.Value);
+        }
+
+        return await consulta
+            .OrderByDescending(penalizacion => penalizacion.FechaInicio)
+            .ToListAsync(cancellationToken);
+    }
+
     // Obtiene las penalizaciones activas de un usuario.
     public async Task<IReadOnlyList<Penalizacion>> ObtenerActivasPorUsuarioAsync(
         int usuarioId,
