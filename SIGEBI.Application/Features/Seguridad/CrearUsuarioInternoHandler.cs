@@ -96,6 +96,8 @@ public sealed class CrearUsuarioInternoHandler
             origen: "Aplicación institucional",
             cancellationToken: cancellationToken);
 
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
         return ApplicationResult<int>.Success(usuario.Id);
     }
 

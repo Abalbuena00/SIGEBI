@@ -93,6 +93,8 @@ public sealed class RegistrarUsuarioExternoHandler
             origen: "Portal web",
             cancellationToken: cancellationToken);
 
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
         return ApplicationResult<int>.Success(usuario.Id);
     }
 

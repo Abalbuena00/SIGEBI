@@ -115,6 +115,10 @@ public sealed class CrearSolicitudPrestamoHandler
             command.EjemplarId,
             politica.HorasReservaTemporal);
 
+        await _solicitudPrestamoRepository.AgregarAsync(
+            solicitudPrestamo,
+            cancellationToken);
+
         await _auditoriaService.RegistrarAsync(
             usuarioId: command.UsuarioId,
             modulo: "Préstamos",

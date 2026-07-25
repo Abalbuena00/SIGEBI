@@ -83,6 +83,8 @@ public sealed class MarcarEjemplarFueraDeServicioHandler
             origen: "Aplicación institucional",
             cancellationToken: cancellationToken);
 
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
         return ApplicationResult.Success();
     }
 
