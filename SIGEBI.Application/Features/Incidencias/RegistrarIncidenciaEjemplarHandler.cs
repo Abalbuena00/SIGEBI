@@ -79,20 +79,37 @@ public sealed class RegistrarIncidenciaEjemplarHandler
             }
         }
 
-        var incidencia = new IncidenciaEjemplar(
-            command.EjemplarId,
-            command.UsuarioReportaId,
-            command.Tipo,
-            command.Descripcion,
-            command.PrestamoId);
-
-        await _incidenciaRepository.AgregarAsync(
-            incidencia,
-            cancellationToken);
 
         bool dejaFueraDeServicio =
             command.Tipo == TipoIncidenciaEjemplar.Dano ||
             command.Tipo == TipoIncidenciaEjemplar.Perdida;
+
+
+        if (dejaFueraDeServicio &&
+            prestamo is null &&
+            ejemplar.Estado == EstadoEjemplar.Prestado)
+        {
+            prestamo = await _prestamoRepository.ObtenerActivoPorEjemplarAsync(
+                command.EjemplarId,
+                cancellationToken);
+
+            if (prestamo is null)
+            {
+                return ApplicationResult.Failure(
+                    "El ejemplar está prestado, pero no se encontró un préstamo activo asociado.");
+            }
+        }
+
+        var incidencia = new IncidenciaEjemplar(
+        command.EjemplarId,
+        command.UsuarioReportaId,
+        command.Tipo,
+        command.Descripcion,
+        prestamo?.Id);
+
+        await _incidenciaRepository.AgregarAsync(
+            incidencia,
+            cancellationToken);
 
         if (dejaFueraDeServicio)
         {
@@ -119,7 +136,7 @@ public sealed class RegistrarIncidenciaEjemplarHandler
             detalle:
                 $"Se registró una incidencia de tipo {command.Tipo} para el ejemplar " +
                 $"{command.EjemplarId}. Préstamo asociado: " +
-                $"{command.PrestamoId?.ToString() ?? "ninguno"}. " +
+                $"{prestamo?.Id.ToString() ?? "ninguno"}." +
                 $"Descripción: {command.Descripcion.Trim()}.",
             origen: "Aplicación institucional",
             cancellationToken: cancellationToken);

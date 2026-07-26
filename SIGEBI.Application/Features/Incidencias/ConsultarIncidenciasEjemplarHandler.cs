@@ -1,5 +1,5 @@
 using SIGEBI.Application.Common;
-using SIGEBI.Application.DTOs.Penalizaciones;
+using SIGEBI.Application.DTOs.Incidencias;
 using SIGEBI.Domain.Entities.Penalizaciones;
 using SIGEBI.Domain.Repository;
 

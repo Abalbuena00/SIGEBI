@@ -1,4 +1,4 @@
-namespace SIGEBI.Application.DTOs.Penalizaciones;
+namespace SIGEBI.Application.DTOs.Incidencias;
 
 public sealed class IncidenciaEjemplarDto
 {
