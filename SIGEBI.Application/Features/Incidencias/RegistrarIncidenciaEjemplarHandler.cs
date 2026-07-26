@@ -136,7 +136,7 @@ public sealed class RegistrarIncidenciaEjemplarHandler
             detalle:
                 $"Se registró una incidencia de tipo {command.Tipo} para el ejemplar " +
                 $"{command.EjemplarId}. Préstamo asociado: " +
-                $"{prestamo?.Id.ToString() ?? "ninguno"}." +
+                $"{prestamo?.Id.ToString() ?? "ninguno"}. " +
                 $"Descripción: {command.Descripcion.Trim()}.",
             origen: "Aplicación institucional",
             cancellationToken: cancellationToken);
