@@ -1,4 +1,5 @@
-﻿using SIGEBI.Domain.Entities.Auditoria;
+using SIGEBI.Domain.Entities.Auditoria;
+using SIGEBI.Domain.Enums;
 
 namespace SIGEBI.Domain.Repository;
 
@@ -8,10 +9,14 @@ public interface IRegistroAuditoriaRepository
         RegistroAuditoria registro,
         CancellationToken cancellationToken = default);
 
-    Task<IReadOnlyList<RegistroAuditoria>> ConsultarAsync(
+    Task<(IReadOnlyList<RegistroAuditoria> Items, int TotalItems)> ConsultarAsync(
         int? usuarioId,
         string? modulo,
+        ResultadoAuditoria? resultado,
+        string? entidadAfectada,
         DateTime? fechaDesde,
         DateTime? fechaHasta,
+        int pageNumber,
+        int pageSize,
         CancellationToken cancellationToken = default);
 }
