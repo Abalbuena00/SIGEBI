@@ -71,4 +71,19 @@ public sealed class PrestamoRepository : BaseRepository<Prestamo>, IPrestamoRepo
             .OrderBy(prestamo => prestamo.FechaLimiteDevolucion)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<bool> ExistePrestamoAbiertoPorRecursoAsync(
+        int recursoBibliograficoId,
+        CancellationToken cancellationToken = default)
+    {
+        return await DbSet.AnyAsync(
+            prestamo =>
+                prestamo.Activo &&
+                (prestamo.Estado == EstadoPrestamo.Activo ||
+                 prestamo.Estado == EstadoPrestamo.Vencido) &&
+                Context.Ejemplares.Any(ejemplar =>
+                    ejemplar.Id == prestamo.EjemplarId &&
+                    ejemplar.RecursoBibliograficoId == recursoBibliograficoId),
+            cancellationToken);
+    }
 }

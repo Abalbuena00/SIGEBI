@@ -1,4 +1,4 @@
-﻿using SIGEBI.Domain.Entities.Prestamos;
+using SIGEBI.Domain.Entities.Prestamos;
 
 namespace SIGEBI.Domain.Repository;
 
@@ -18,5 +18,9 @@ public interface IPrestamoRepository : IBaseRepository<Prestamo>
 
     Task<IReadOnlyList<Prestamo>> ObtenerVencidosAsync(
         DateTime fechaActual,
+        CancellationToken cancellationToken = default);
+
+    Task<bool> ExistePrestamoAbiertoPorRecursoAsync(
+        int recursoBibliograficoId,
         CancellationToken cancellationToken = default);
 }
