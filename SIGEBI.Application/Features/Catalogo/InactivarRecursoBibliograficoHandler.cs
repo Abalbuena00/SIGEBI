@@ -27,26 +27,21 @@ public sealed class InactivarRecursoBibliograficoHandler
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<ApplicationResult> EjecutarInactivacionAsync(
+    public async Task<ApplicationResult> HandleAsync(
         InactivarRecursoBibliograficoCommand command,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(command);
+
         var validacion = ValidarCommand(command);
+
         if (!validacion.IsSuccess)
             return validacion;
 
         return await EjecutarInactivacionAsync(command, cancellationToken);
     }
 
-    private async Task<ApplicationResult> ValidarEntidadesAsync(
-        InactivarRecursoBibliograficoCommand command,
-        CancellationToken cancellationToken)
-    {
-        return await ValidarUsuarioAsync(command, cancellationToken);
-    }
-
-    private async Task<ApplicationResult> ValidarUsuarioAsync(
+    private async Task<ApplicationResult> EjecutarInactivacionAsync(
         InactivarRecursoBibliograficoCommand command,
         CancellationToken cancellationToken)
     {
