@@ -87,6 +87,23 @@ public sealed class PrestamoRepository : BaseRepository<Prestamo>, IPrestamoRepo
             cancellationToken);
     }
 
+    public async Task<IReadOnlyList<Prestamo>> ObtenerAbiertosPorRecursoAsync(
+        int recursoBibliograficoId,
+        CancellationToken cancellationToken = default)
+    {
+        return await DbSet
+            .AsNoTracking()
+            .Where(prestamo =>
+                prestamo.Activo &&
+                (prestamo.Estado == EstadoPrestamo.Activo ||
+                 prestamo.Estado == EstadoPrestamo.Vencido) &&
+                Context.Ejemplares.Any(ejemplar =>
+                    ejemplar.Id == prestamo.EjemplarId &&
+                    ejemplar.RecursoBibliograficoId == recursoBibliograficoId))
+            .OrderBy(prestamo => prestamo.FechaLimiteDevolucion)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<(IReadOnlyList<Prestamo> Items, int TotalItems)> ConsultarHistorialAsync(
         int? usuarioId,
         int? recursoBibliograficoId,

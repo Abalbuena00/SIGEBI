@@ -25,6 +25,10 @@ public interface IPrestamoRepository : IBaseRepository<Prestamo>
         int recursoBibliograficoId,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<Prestamo>> ObtenerAbiertosPorRecursoAsync(
+        int recursoBibliograficoId,
+        CancellationToken cancellationToken = default);
+
     Task<(IReadOnlyList<Prestamo> Items, int TotalItems)> ConsultarHistorialAsync(
         int? usuarioId,
         int? recursoBibliograficoId,
