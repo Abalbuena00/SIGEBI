@@ -19,4 +19,8 @@ public interface IIncidenciaEjemplarRepository : IBaseRepository<IncidenciaEjemp
     Task<IReadOnlyList<IncidenciaEjemplar>> ObtenerPorRecursoAsync(
         int recursoBibliograficoId,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<IncidenciaEjemplar>> ObtenerPorUsuarioAsync(
+        int usuarioId,
+        CancellationToken cancellationToken = default);
 }

@@ -75,4 +75,20 @@ public sealed class IncidenciaEjemplarRepository
             .OrderByDescending(incidencia => incidencia.FechaRegistro)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<IReadOnlyList<IncidenciaEjemplar>> ObtenerPorUsuarioAsync(
+        int usuarioId,
+        CancellationToken cancellationToken = default)
+    {
+        return await DbSet
+            .AsNoTracking()
+            .Where(incidencia =>
+                incidencia.Activo &&
+                (incidencia.UsuarioReportaId == usuarioId ||
+                 Context.Prestamos.Any(prestamo =>
+                     prestamo.Id == incidencia.PrestamoId &&
+                     prestamo.UsuarioId == usuarioId)))
+            .OrderByDescending(incidencia => incidencia.FechaRegistro)
+            .ToListAsync(cancellationToken);
+    }
 }
