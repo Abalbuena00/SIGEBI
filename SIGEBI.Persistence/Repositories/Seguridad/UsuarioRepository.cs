@@ -53,6 +53,23 @@ public sealed class UsuarioRepository : BaseRepository<Usuario>, IUsuarioReposit
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<Usuario?> ObtenerConRolesPorIdAsync(
+        int usuarioId,
+        CancellationToken cancellationToken = default)
+    {
+        return await DbSet
+            .Include(usuario => usuario.Roles)
+                .ThenInclude(usuarioRol => usuarioRol.Rol)
+            .FirstOrDefaultAsync(
+                usuario => usuario.Id == usuarioId && usuario.Activo,
+                cancellationToken);
+    }
+
+    public void RemoverRol(UsuarioRol usuarioRol)
+    {
+        Context.Set<UsuarioRol>().Remove(usuarioRol);
+    }
+
     // Busca usuarios con filtros de texto, estado y rol, y devuelve resultados paginados.
     public async Task<(IReadOnlyList<Usuario> Items, int TotalCount)> BuscarAsync(
     string? textoBusqueda,
