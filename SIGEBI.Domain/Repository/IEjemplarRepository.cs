@@ -15,4 +15,8 @@ public interface IEjemplarRepository : IBaseRepository<Ejemplar>
     Task<bool> ExisteEjemplarDisponibleAsync(
         int recursoBibliograficoId,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<HistorialEstadoEjemplar>> ObtenerHistorialEstadosPorRecursoAsync(
+        int recursoBibliograficoId,
+        CancellationToken cancellationToken = default);
 }

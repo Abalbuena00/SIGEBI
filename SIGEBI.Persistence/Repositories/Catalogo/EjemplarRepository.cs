@@ -57,4 +57,17 @@ public sealed class EjemplarRepository : BaseRepository<Ejemplar>, IEjemplarRepo
                     ejemplar.Activo,
                 cancellationToken);
     }
+
+    public async Task<IReadOnlyList<HistorialEstadoEjemplar>> ObtenerHistorialEstadosPorRecursoAsync(
+        int recursoBibliograficoId,
+        CancellationToken cancellationToken = default)
+    {
+        return await Context.HistorialEstadosEjemplar
+            .AsNoTracking()
+            .Where(historial => Context.Ejemplares.Any(ejemplar =>
+                ejemplar.Id == historial.EjemplarId &&
+                ejemplar.RecursoBibliograficoId == recursoBibliograficoId))
+            .OrderByDescending(historial => historial.FechaCambio)
+            .ToListAsync(cancellationToken);
+    }
 }

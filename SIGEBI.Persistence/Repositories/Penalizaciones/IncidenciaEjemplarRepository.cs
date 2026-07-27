@@ -60,4 +60,19 @@ public sealed class IncidenciaEjemplarRepository
             .OrderByDescending(incidencia => incidencia.FechaRegistro)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<IReadOnlyList<IncidenciaEjemplar>> ObtenerPorRecursoAsync(
+        int recursoBibliograficoId,
+        CancellationToken cancellationToken = default)
+    {
+        return await DbSet
+            .AsNoTracking()
+            .Where(incidencia =>
+                incidencia.Activo &&
+                Context.Ejemplares.Any(ejemplar =>
+                    ejemplar.Id == incidencia.EjemplarId &&
+                    ejemplar.RecursoBibliograficoId == recursoBibliograficoId))
+            .OrderByDescending(incidencia => incidencia.FechaRegistro)
+            .ToListAsync(cancellationToken);
+    }
 }
