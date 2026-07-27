@@ -86,4 +86,49 @@ public sealed class PrestamoRepository : BaseRepository<Prestamo>, IPrestamoRepo
                     ejemplar.RecursoBibliograficoId == recursoBibliograficoId),
             cancellationToken);
     }
+
+    public async Task<(IReadOnlyList<Prestamo> Items, int TotalItems)> ConsultarHistorialAsync(
+        int? usuarioId,
+        int? recursoBibliograficoId,
+        int? ejemplarId,
+        EstadoPrestamo? estado,
+        DateTime? fechaDesde,
+        DateTime? fechaHasta,
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var query = DbSet.AsNoTracking().Where(prestamo => prestamo.Activo);
+
+        if (usuarioId.HasValue)
+            query = query.Where(prestamo => prestamo.UsuarioId == usuarioId.Value);
+
+        if (recursoBibliograficoId.HasValue)
+        {
+            query = query.Where(prestamo => Context.Ejemplares.Any(ejemplar =>
+                ejemplar.Id == prestamo.EjemplarId &&
+                ejemplar.RecursoBibliograficoId == recursoBibliograficoId.Value));
+        }
+
+        if (ejemplarId.HasValue)
+            query = query.Where(prestamo => prestamo.EjemplarId == ejemplarId.Value);
+
+        if (estado.HasValue)
+            query = query.Where(prestamo => prestamo.Estado == estado.Value);
+
+        if (fechaDesde.HasValue)
+            query = query.Where(prestamo => prestamo.FechaInicio >= fechaDesde.Value);
+
+        if (fechaHasta.HasValue)
+            query = query.Where(prestamo => prestamo.FechaInicio <= fechaHasta.Value);
+
+        int totalItems = await query.CountAsync(cancellationToken);
+        var items = await query
+            .OrderByDescending(prestamo => prestamo.FechaInicio)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return (items, totalItems);
+    }
 }
