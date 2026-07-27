@@ -43,4 +43,21 @@ public sealed class NotificacionRepository
             .OrderByDescending(notificacion => notificacion.FechaEnvio)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<bool> ExistePorReferenciaAsync(
+        int usuarioDestinatarioId,
+        TipoNotificacion tipo,
+        string entidadReferencia,
+        int entidadReferenciaId,
+        CancellationToken cancellationToken = default)
+    {
+        return await DbSet.AnyAsync(
+            notificacion =>
+                notificacion.Activo &&
+                notificacion.UsuarioDestinatarioId == usuarioDestinatarioId &&
+                notificacion.Tipo == tipo &&
+                notificacion.EntidadReferencia == entidadReferencia &&
+                notificacion.EntidadReferenciaId == entidadReferenciaId,
+            cancellationToken);
+    }
 }

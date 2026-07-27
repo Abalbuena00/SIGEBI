@@ -72,6 +72,22 @@ public sealed class PrestamoRepository : BaseRepository<Prestamo>, IPrestamoRepo
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<Prestamo>> ObtenerProximosAVencerAsync(
+        DateTime fechaDesde,
+        DateTime fechaHasta,
+        CancellationToken cancellationToken = default)
+    {
+        return await DbSet
+            .AsNoTracking()
+            .Where(prestamo =>
+                prestamo.Activo &&
+                prestamo.Estado == EstadoPrestamo.Activo &&
+                prestamo.FechaLimiteDevolucion >= fechaDesde &&
+                prestamo.FechaLimiteDevolucion <= fechaHasta)
+            .OrderBy(prestamo => prestamo.FechaLimiteDevolucion)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<bool> ExistePrestamoAbiertoPorRecursoAsync(
         int recursoBibliograficoId,
         CancellationToken cancellationToken = default)

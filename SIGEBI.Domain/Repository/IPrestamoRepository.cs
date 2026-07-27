@@ -21,6 +21,11 @@ public interface IPrestamoRepository : IBaseRepository<Prestamo>
         DateTime fechaActual,
         CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<Prestamo>> ObtenerProximosAVencerAsync(
+        DateTime fechaDesde,
+        DateTime fechaHasta,
+        CancellationToken cancellationToken = default);
+
     Task<bool> ExistePrestamoAbiertoPorRecursoAsync(
         int recursoBibliograficoId,
         CancellationToken cancellationToken = default);
