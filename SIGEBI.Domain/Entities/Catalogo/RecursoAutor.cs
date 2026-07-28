@@ -27,4 +27,18 @@ public sealed class RecursoAutor : BaseEntity
         RecursoBibliograficoId = recursoBibliograficoId;
         AutorId = autorId;
     }
+
+    public RecursoAutor(RecursoBibliografico recursoBibliografico, Autor autor)
+    {
+        ArgumentNullException.ThrowIfNull(recursoBibliografico);
+        ArgumentNullException.ThrowIfNull(autor);
+
+        if (autor.Id <= 0)
+            throw new ArgumentException("El autor debe existir antes de asociarlo.");
+
+        RecursoBibliografico = recursoBibliografico;
+        RecursoBibliograficoId = recursoBibliografico.Id;
+        Autor = autor;
+        AutorId = autor.Id;
+    }
 }

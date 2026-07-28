@@ -42,6 +42,23 @@ public sealed class Ejemplar : AuditableEntity
         Estado = EstadoEjemplar.Disponible;
     }
 
+    public Ejemplar(
+        RecursoBibliografico recursoBibliografico,
+        string codigoInterno,
+        string? estadoFisico = null)
+    {
+        ArgumentNullException.ThrowIfNull(recursoBibliografico);
+
+        if (string.IsNullOrWhiteSpace(codigoInterno))
+            throw new ArgumentException("El c\u00F3digo interno del ejemplar es obligatorio.");
+
+        RecursoBibliografico = recursoBibliografico;
+        RecursoBibliograficoId = recursoBibliografico.Id;
+        CodigoInterno = codigoInterno.Trim();
+        EstadoFisico = estadoFisico?.Trim();
+        Estado = EstadoEjemplar.Disponible;
+    }
+
     public OperationResult Reservar()
     {
         if (Estado != EstadoEjemplar.Disponible)

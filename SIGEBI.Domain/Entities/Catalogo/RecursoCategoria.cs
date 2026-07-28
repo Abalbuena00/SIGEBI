@@ -27,4 +27,18 @@ public sealed class RecursoCategoria : BaseEntity
         RecursoBibliograficoId = recursoBibliograficoId;
         CategoriaId = categoriaId;
     }
+
+    public RecursoCategoria(RecursoBibliografico recursoBibliografico, Categoria categoria)
+    {
+        ArgumentNullException.ThrowIfNull(recursoBibliografico);
+        ArgumentNullException.ThrowIfNull(categoria);
+
+        if (categoria.Id <= 0)
+            throw new ArgumentException("La categor\u00EDa debe existir antes de asociarla.");
+
+        RecursoBibliografico = recursoBibliografico;
+        RecursoBibliograficoId = recursoBibliografico.Id;
+        Categoria = categoria;
+        CategoriaId = categoria.Id;
+    }
 }
