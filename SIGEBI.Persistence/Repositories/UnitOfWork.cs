@@ -14,6 +14,14 @@ public sealed class UnitOfWork : IUnitOfWork
         _context = context;
     }
 
+    public async Task<IUnitOfWorkTransaction> BeginTransactionAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+
+        return new EfCoreUnitOfWorkTransaction(transaction);
+    }
+
     public async Task<int> SaveChangesAsync(
         CancellationToken cancellationToken = default)
     {
