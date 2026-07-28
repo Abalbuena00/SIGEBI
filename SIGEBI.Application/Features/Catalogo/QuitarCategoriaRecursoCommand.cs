@@ -5,4 +5,6 @@ public sealed class QuitarCategoriaRecursoCommand
     public int RecursoBibliograficoId { get; init; }
 
     public int CategoriaId { get; init; }
+
+    public int UsuarioResponsableId { get; init; }
 }
