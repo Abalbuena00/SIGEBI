@@ -4,5 +4,7 @@ public sealed class ActualizarAutorCommand
 {
     public int AutorId { get; init; }
 
+    public int UsuarioResponsableId { get; init; }
+
     public string Nombre { get; init; } = string.Empty;
 }
