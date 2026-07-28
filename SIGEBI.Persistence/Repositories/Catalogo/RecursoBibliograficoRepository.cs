@@ -47,24 +47,24 @@ public sealed class RecursoBibliograficoRepository
     public async Task<RecursoBibliografico?> ObtenerDetallePorIdAsync(
         int id,
         CancellationToken cancellationToken = default)
-        {
-            return await Context.RecursosBibliograficos
-                .AsNoTracking()
-                .Include(recurso => recurso.Ejemplares)
-                .Include(recurso => recurso.Autores)
-                    .ThenInclude(recursoAutor => recursoAutor.Autor)
-                .Include(recurso => recurso.Categorias)
-                    .ThenInclude(recursoCategoria => recursoCategoria.Categoria)
-                .FirstOrDefaultAsync(
-                    recurso => recurso.Id == id && recurso.Activo,
-                    cancellationToken);
-        }
+    {
+        return await Context.RecursosBibliograficos
+            .AsNoTracking()
+            .Include(recurso => recurso.Ejemplares)
+            .Include(recurso => recurso.Autores)
+                .ThenInclude(recursoAutor => recursoAutor.Autor)
+            .Include(recurso => recurso.Categorias)
+                .ThenInclude(recursoCategoria => recursoCategoria.Categoria)
+            .FirstOrDefaultAsync(
+                recurso => recurso.Id == id && recurso.Activo,
+                cancellationToken);
+    }
 
     // ObtenerParaActualizarRelacionesAsync busca un recurso por ID y devuelve el detalle completo incluyendo autores y categorías, pero no incluye los ejemplares.
     // Esto es útil cuando se desea actualizar las relaciones del recurso sin necesidad de cargar los ejemplares.
     public async Task<RecursoBibliografico?> ObtenerParaActualizarRelacionesAsync(
-    int id,
-    CancellationToken cancellationToken = default)
+        int id,
+        CancellationToken cancellationToken = default)
     {
         return await Context.RecursosBibliograficos
             .Include(recurso => recurso.Autores)
@@ -88,13 +88,13 @@ public sealed class RecursoBibliograficoRepository
 
     // Permite consultar el catálogo por título, autor o categoría.
     public async Task<(IReadOnlyList<RecursoBibliografico> Items, int TotalCount)> BuscarAsync(
-    string? titulo,
-    string? autor,
-    string? categoria,
-    bool? disponible,
-    int pageNumber,
-    int pageSize,
-    CancellationToken cancellationToken = default)
+        string? titulo,
+        string? autor,
+        string? categoria,
+        bool? disponible,
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken = default)
     {
         var query = DbSet
             .AsNoTracking()

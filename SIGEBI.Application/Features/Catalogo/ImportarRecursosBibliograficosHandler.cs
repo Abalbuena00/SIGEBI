@@ -153,7 +153,6 @@ public sealed class ImportarRecursosBibliograficosHandler
                 cancellationToken: cancellationToken);
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-
         }
 
         var resultado = new ResultadoImportacionRecursosBibliograficosDto
@@ -318,7 +317,6 @@ public sealed class ImportarRecursosBibliograficosHandler
         Mensaje = mensaje
     };
 
-
     private static string CrearMensajeImportacion(
         IReadOnlyList<string> autoresOmitidos,
         IReadOnlyList<string> categoriasOmitidas)
@@ -333,7 +331,6 @@ public sealed class ImportarRecursosBibliograficosHandler
 
         return string.Join(" ", mensajes);
     }
-
 
     private static ApplicationResult ValidarCommand(ImportarRecursosBibliograficosCommand command)
     {

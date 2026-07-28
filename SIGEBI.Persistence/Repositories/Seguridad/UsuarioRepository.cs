@@ -72,12 +72,12 @@ public sealed class UsuarioRepository : BaseRepository<Usuario>, IUsuarioReposit
 
     // Busca usuarios con filtros de texto, estado y rol, y devuelve resultados paginados.
     public async Task<(IReadOnlyList<Usuario> Items, int TotalCount)> BuscarAsync(
-    string? textoBusqueda,
-    EstadoUsuario? estado,
-    int? rolId,
-    int pageNumber,
-    int pageSize,
-    CancellationToken cancellationToken = default)
+        string? textoBusqueda,
+        EstadoUsuario? estado,
+        int? rolId,
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken = default)
     {
         var query = Context.Usuarios
             .AsNoTracking()

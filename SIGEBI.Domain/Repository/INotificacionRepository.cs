@@ -1,5 +1,4 @@
 ﻿using SIGEBI.Domain.Entities.Notificaciones;
-
 using SIGEBI.Domain.Enums;
 
 namespace SIGEBI.Domain.Repository;
