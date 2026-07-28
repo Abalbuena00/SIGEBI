@@ -6,6 +6,8 @@ public sealed class ActualizarImagenRecursoBibliograficoCommand
 {
     public int RecursoBibliograficoId { get; init; }
 
+    public int UsuarioResponsableId { get; init; }
+
     public TipoImagenRecursoBibliografico TipoImagen { get; init; }
 
     public string NombreArchivo { get; init; } = string.Empty;
