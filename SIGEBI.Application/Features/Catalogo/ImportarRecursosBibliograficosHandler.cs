@@ -91,8 +91,10 @@ public sealed class ImportarRecursosBibliograficosHandler
         var codigosRecursos = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var isbns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var codigosEjemplares = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var autores = new Dictionary<string, Autor?>(StringComparer.OrdinalIgnoreCase);
-        var categorias = new Dictionary<string, Categoria?>(StringComparer.OrdinalIgnoreCase);
+        var autores = new Dictionary<string, Autor>(StringComparer.OrdinalIgnoreCase);
+        var categorias = new Dictionary<string, Categoria>(StringComparer.OrdinalIgnoreCase);
+        var autoresNuevos = new HashSet<Autor>();
+        var categoriasNuevas = new HashSet<Categoria>();
 
         foreach (var fila in filas)
         {
@@ -105,9 +107,10 @@ public sealed class ImportarRecursosBibliograficosHandler
                     codigosEjemplares,
                     autores,
                     categorias,
+                    autoresNuevos,
+                    categoriasNuevas,
                     cancellationToken);
 
-                await _recursoRepository.AgregarAsync(preparada.Recurso, cancellationToken);
                 filasPreparadas.Add(preparada);
                 codigosRecursos.Add(preparada.Recurso.CodigoInterno);
 
@@ -132,27 +135,20 @@ public sealed class ImportarRecursosBibliograficosHandler
         var recursosCreados = filasPreparadas.Count;
         var recursosOmitidos = filas.Count - recursosCreados;
         var ejemplaresCreados = filasPreparadas.Count(fila => fila.CodigoInternoEjemplar is not null);
-        var relacionesAutores = filasPreparadas.Sum(fila => fila.RelacionesAutores);
-        var relacionesCategorias = filasPreparadas.Sum(fila => fila.RelacionesCategorias);
+        var relacionesAutores = filasPreparadas.Sum(fila => fila.Autores.Count);
+        var relacionesCategorias = filasPreparadas.Sum(fila => fila.Categorias.Count);
 
         if (recursosCreados > 0)
         {
-            await _auditoriaService.RegistrarAsync(
-                usuarioId: command.UsuarioResponsableId,
-                modulo: "Cat\u00E1logo",
-                accion: "Importar recursos bibliogr\u00E1ficos",
-                resultado: ResultadoAuditoria.Exitoso,
-                entidadAfectada: "RecursoBibliografico",
-                entidadAfectadaId: null,
-                detalle:
-                    $"Archivo: {command.NombreArchivo.Trim()}. Total filas: {filas.Count}. " +
-                    $"Recursos creados: {recursosCreados}. Ejemplares creados: {ejemplaresCreados}. " +
-                    "Autores creados: 0. Categor\u00EDas creadas: 0. " +
-                    $"Filas omitidas: {recursosOmitidos}.",
-                origen: "Aplicaci\u00F3n institucional",
-                cancellationToken: cancellationToken);
-
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await GuardarImportacionAsync(
+                command,
+                filas.Count,
+                filasPreparadas,
+                autoresNuevos,
+                categoriasNuevas,
+                ejemplaresCreados,
+                recursosOmitidos,
+                cancellationToken);
         }
 
         var resultado = new ResultadoImportacionRecursosBibliograficosDto
@@ -161,8 +157,8 @@ public sealed class ImportarRecursosBibliograficosHandler
             RecursosCreados = recursosCreados,
             RecursosOmitidos = recursosOmitidos,
             EjemplaresCreados = ejemplaresCreados,
-            AutoresCreados = 0,
-            CategoriasCreadas = 0,
+            AutoresCreados = autoresNuevos.Count,
+            CategoriasCreadas = categoriasNuevas.Count,
             RelacionesAutoresCreadas = relacionesAutores,
             RelacionesCategoriasCreadas = relacionesCategorias,
             Detalles = detalles
@@ -176,8 +172,10 @@ public sealed class ImportarRecursosBibliograficosHandler
         HashSet<string> codigosRecursos,
         HashSet<string> isbns,
         HashSet<string> codigosEjemplares,
-        Dictionary<string, Autor?> autores,
-        Dictionary<string, Categoria?> categorias,
+        Dictionary<string, Autor> autores,
+        Dictionary<string, Categoria> categorias,
+        HashSet<Autor> autoresNuevos,
+        HashSet<Categoria> categoriasNuevas,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(fila.CodigoInternoRecurso))
@@ -233,74 +231,195 @@ public sealed class ImportarRecursosBibliograficosHandler
             fila.AnioPublicacion,
             fila.Edicion);
 
-        var autoresFila = await ObtenerAutoresAsync(fila.Autores, autores, cancellationToken);
-        var categoriasFila = await ObtenerCategoriasAsync(fila.Categorias, categorias, cancellationToken);
-
         if (codigoEjemplar is not null)
             recurso.AgregarEjemplar(new Ejemplar(recurso, codigoEjemplar, fila.EstadoFisico));
 
-        foreach (var autor in autoresFila.Existentes)
-            recurso.AgregarAutor(new RecursoAutor(recurso, autor));
+        var autoresNuevosFila = new HashSet<Autor>();
+        var categoriasNuevasFila = new HashSet<Categoria>();
+        var autoresFila = await ObtenerAutoresAsync(
+            fila.Autores,
+            autores,
+            autoresNuevosFila,
+            cancellationToken);
+        var categoriasFila = await ObtenerCategoriasAsync(
+            fila.Categorias,
+            categorias,
+            categoriasNuevasFila,
+            cancellationToken);
 
-        foreach (var categoria in categoriasFila.Existentes)
-            recurso.AgregarCategoria(new RecursoCategoria(recurso, categoria));
+        autoresNuevos.UnionWith(autoresNuevosFila);
+        categoriasNuevas.UnionWith(categoriasNuevasFila);
 
         return new FilaPreparada(
             recurso,
             codigoEjemplar,
-            autoresFila.Existentes.Count,
-            categoriasFila.Existentes.Count,
-            CrearMensajeImportacion(autoresFila.Omitidos, categoriasFila.Omitidos));
+            autoresFila,
+            categoriasFila,
+            "Fila importada correctamente.");
     }
 
-    private async Task<RelacionesEncontradas<Autor>> ObtenerAutoresAsync(
+    private async Task<IReadOnlyList<Autor>> ObtenerAutoresAsync(
         IReadOnlyList<string> nombres,
-        Dictionary<string, Autor?> cache,
+        Dictionary<string, Autor> cache,
+        HashSet<Autor> autoresNuevos,
         CancellationToken cancellationToken)
     {
         var resultado = new List<Autor>();
-        var omitidos = new List<string>();
         foreach (var nombre in nombres.Where(nombre => !string.IsNullOrWhiteSpace(nombre))
                      .Select(nombre => nombre.Trim()).Distinct(StringComparer.OrdinalIgnoreCase))
         {
             if (!cache.TryGetValue(nombre, out var autor))
             {
                 autor = await _autorRepository.ObtenerPorNombreAsync(nombre, cancellationToken);
+                if (autor is null)
+                {
+                    autor = new Autor(nombre);
+                    autoresNuevos.Add(autor);
+                }
+
                 cache[nombre] = autor;
             }
 
-            if (autor is null)
-                omitidos.Add(nombre);
-            else
-                resultado.Add(autor);
+            if (autor.Id <= 0)
+                autoresNuevos.Add(autor);
+
+            resultado.Add(autor);
         }
 
-        return new RelacionesEncontradas<Autor>(resultado, omitidos);
+        return resultado;
     }
 
-    private async Task<RelacionesEncontradas<Categoria>> ObtenerCategoriasAsync(
+    private async Task<IReadOnlyList<Categoria>> ObtenerCategoriasAsync(
         IReadOnlyList<string> nombres,
-        Dictionary<string, Categoria?> cache,
+        Dictionary<string, Categoria> cache,
+        HashSet<Categoria> categoriasNuevas,
         CancellationToken cancellationToken)
     {
         var resultado = new List<Categoria>();
-        var omitidos = new List<string>();
         foreach (var nombre in nombres.Where(nombre => !string.IsNullOrWhiteSpace(nombre))
                      .Select(nombre => nombre.Trim()).Distinct(StringComparer.OrdinalIgnoreCase))
         {
             if (!cache.TryGetValue(nombre, out var categoria))
             {
                 categoria = await _categoriaRepository.ObtenerPorNombreAsync(nombre, cancellationToken);
+                if (categoria is null)
+                {
+                    categoria = new Categoria(nombre);
+                    categoriasNuevas.Add(categoria);
+                }
+
                 cache[nombre] = categoria;
             }
 
-            if (categoria is null)
-                omitidos.Add(nombre);
-            else
-                resultado.Add(categoria);
+            if (categoria.Id <= 0)
+                categoriasNuevas.Add(categoria);
+
+            resultado.Add(categoria);
         }
 
-        return new RelacionesEncontradas<Categoria>(resultado, omitidos);
+        return resultado;
+    }
+
+    private async Task GuardarImportacionAsync(
+        ImportarRecursosBibliograficosCommand command,
+        int totalFilas,
+        IReadOnlyList<FilaPreparada> filasPreparadas,
+        IReadOnlyCollection<Autor> autoresNuevos,
+        IReadOnlyCollection<Categoria> categoriasNuevas,
+        int ejemplaresCreados,
+        int recursosOmitidos,
+        CancellationToken cancellationToken)
+    {
+        await using var transaction = await _unitOfWork.BeginTransactionAsync(cancellationToken);
+
+        try
+        {
+            foreach (var autor in autoresNuevos)
+                await _autorRepository.AgregarAsync(autor, cancellationToken);
+
+            foreach (var categoria in categoriasNuevas)
+                await _categoriaRepository.AgregarAsync(categoria, cancellationToken);
+
+            foreach (var fila in filasPreparadas)
+                await _recursoRepository.AgregarAsync(fila.Recurso, cancellationToken);
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            foreach (var fila in filasPreparadas)
+            {
+                foreach (var autor in fila.Autores)
+                    fila.Recurso.AgregarAutor(new RecursoAutor(fila.Recurso.Id, autor.Id));
+
+                foreach (var categoria in fila.Categorias)
+                    fila.Recurso.AgregarCategoria(new RecursoCategoria(fila.Recurso.Id, categoria.Id));
+            }
+
+            await RegistrarAuditoriaImportacionAsync(
+                command,
+                totalFilas,
+                filasPreparadas.Count,
+                ejemplaresCreados,
+                autoresNuevos.Count,
+                categoriasNuevas.Count,
+                recursosOmitidos,
+                cancellationToken);
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
+    }
+
+    private Task RegistrarAuditoriaImportacionAsync(
+        ImportarRecursosBibliograficosCommand command,
+        int totalFilas,
+        int recursosCreados,
+        int ejemplaresCreados,
+        int autoresCreados,
+        int categoriasCreadas,
+        int recursosOmitidos,
+        CancellationToken cancellationToken)
+    {
+        var detalle = CrearDetalleAuditoria(command.NombreArchivo, totalFilas, recursosCreados,
+            ejemplaresCreados, autoresCreados, categoriasCreadas, recursosOmitidos);
+
+        return RegistrarAuditoriaAsync(command.UsuarioResponsableId, detalle, cancellationToken);
+    }
+
+    private Task RegistrarAuditoriaAsync(
+        int usuarioId,
+        string detalle,
+        CancellationToken cancellationToken)
+    {
+        return _auditoriaService.RegistrarAsync(
+            usuarioId: usuarioId,
+            modulo: "Cat\u00E1logo",
+            accion: "Importar recursos bibliogr\u00E1ficos",
+            resultado: ResultadoAuditoria.Exitoso,
+            entidadAfectada: "RecursoBibliografico",
+            entidadAfectadaId: null,
+            detalle: detalle,
+            origen: "Aplicaci\u00F3n institucional",
+            cancellationToken: cancellationToken);
+    }
+
+    private static string CrearDetalleAuditoria(
+        string nombreArchivo,
+        int totalFilas,
+        int recursosCreados,
+        int ejemplaresCreados,
+        int autoresCreados,
+        int categoriasCreadas,
+        int recursosOmitidos)
+    {
+        return $"Archivo: {nombreArchivo.Trim()}. Total filas: {totalFilas}. " +
+               $"Recursos creados: {recursosCreados}. Ejemplares creados: {ejemplaresCreados}. " +
+               $"Autores creados: {autoresCreados}. Categor\u00EDas creadas: {categoriasCreadas}. " +
+               $"Filas omitidas: {recursosOmitidos}.";
     }
 
     private static DetalleImportacionRecursoBibliograficoDto CrearDetalle(
@@ -316,21 +435,6 @@ public sealed class ImportarRecursosBibliograficosHandler
             : fila.CodigoInternoEjemplar.Trim(),
         Mensaje = mensaje
     };
-
-    private static string CrearMensajeImportacion(
-        IReadOnlyList<string> autoresOmitidos,
-        IReadOnlyList<string> categoriasOmitidas)
-    {
-        var mensajes = new List<string> { "Fila importada correctamente." };
-
-        if (autoresOmitidos.Count > 0)
-            mensajes.Add($"Autores no asociados porque no existen: {string.Join(", ", autoresOmitidos)}.");
-
-        if (categoriasOmitidas.Count > 0)
-            mensajes.Add($"Categor\u00EDas no asociadas porque no existen: {string.Join(", ", categoriasOmitidas)}.");
-
-        return string.Join(" ", mensajes);
-    }
 
     private static ApplicationResult ValidarCommand(ImportarRecursosBibliograficosCommand command)
     {
@@ -357,11 +461,7 @@ public sealed class ImportarRecursosBibliograficosHandler
     private sealed record FilaPreparada(
         RecursoBibliografico Recurso,
         string? CodigoInternoEjemplar,
-        int RelacionesAutores,
-        int RelacionesCategorias,
+        IReadOnlyList<Autor> Autores,
+        IReadOnlyList<Categoria> Categorias,
         string Mensaje);
-
-    private sealed record RelacionesEncontradas<T>(
-        IReadOnlyList<T> Existentes,
-        IReadOnlyList<string> Omitidos);
 }
